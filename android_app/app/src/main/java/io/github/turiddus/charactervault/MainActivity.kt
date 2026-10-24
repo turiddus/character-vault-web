@@ -258,6 +258,15 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface fun openCropper() = main.post { openCropper(null) }
 
+        /** Riproduce un video dell'archivio trasmettendolo da Drive (player del telefono). */
+        @JavascriptInterface fun playVideo(fileId: String, title: String?) {
+            main.post {
+                startActivity(Intent(this@MainActivity, VideoActivity::class.java)
+                    .putExtra(VideoActivity.EXTRA_FILE_ID, fileId)
+                    .putExtra(VideoActivity.EXTRA_TITLE, title ?: "Video"))
+            }
+        }
+
         /** «Scarica originale»: direttamente nella Galleria del telefono. */
         @JavascriptInterface fun saveDriveFile(fileId: String, name: String) {
             main.post {

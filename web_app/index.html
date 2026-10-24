@@ -369,7 +369,10 @@ function openPending(id){
       $("#pvideo").src = S.localUploads.get(f.id);
       $("#pspin")?.remove();
     } else {
-      $("#pspin").outerHTML = `<a class="btn primary" href="https://drive.google.com/file/d/${encodeURIComponent(f.id)}/view" target="_blank" rel="noopener">Riproduci video su Drive</a>`;
+      $("#pspin").remove();
+      const viewer = d.querySelector(".viewer");
+      viewer.insertAdjacentHTML("beforeend", playOverlay());
+      $("#vplay").onclick = () => playVideo(f.id, f.name, viewer);
     }
     return;
   }
@@ -384,6 +387,32 @@ window.__cvNativeUploaded = async n => {
   toast(`${n} ${n === 1 ? "foto aggiunta" : "foto aggiunte"}: in attesa del PC`);
   await loadPending(); if (location.hash.startsWith("#/add")) go("#/"); else render();
 };
+
+/* ============================================================= riproduzione video */
+// App Android: player nativo che trasmette da Drive (salto avanti/indietro, nessun download completo).
+// Browser: il video viene scaricato e poi riprodotto nella pagina (i video lunghi richiedono tempo e dati).
+async function playVideo(fileId, title, container){
+  if (NATIVE && window.CVNative.playVideo) { window.CVNative.playVideo(fileId, title || "Video"); return; }
+  container.innerHTML = `<div class="spin" id="vprog">download del video…</div>`;
+  try {
+    const r = await api(`${API}/files/${fileId}?alt=media&supportsAllDrives=true`);
+    const total = Number(r.headers.get("content-length") || 0);
+    const reader = r.body.getReader(); const parts = []; let got = 0;
+    for (;;) {
+      const {done, value} = await reader.read(); if (done) break;
+      parts.push(value); got += value.length;
+      const p = $("#vprog"); if (p) p.textContent = total ? `download ${Math.round(got / total * 100)}% · ${(got / 1e6).toFixed(1)} MB` : `download ${(got / 1e6).toFixed(1)} MB`;
+    }
+    const url = URL.createObjectURL(new Blob(parts, {type: r.headers.get("content-type") || "video/mp4"}));
+    detailUrls.push(url);
+    container.innerHTML = `<video controls autoplay playsinline style="max-width:100%;max-height:100%"></video>`;
+    const v = container.querySelector("video"); v.src = url;
+    v.onerror = () => { container.innerHTML = `<div class="spin">il browser non riesce a riprodurre questo formato: usa «Scarica originale» o «Converti MP4» sul PC</div>`; };
+  } catch(e) { container.innerHTML = `<div class="spin">${esc(e.message)}</div>`; }
+}
+function playOverlay(){
+  return `<button class="btn primary" id="vplay" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:17px;padding:14px 22px;box-shadow:0 6px 24px rgba(0,0,0,.6)">▶ Riproduci</button>`;
+}
 
 /* ============================================================= modifiche dal telefono */
 async function queueOp(op){
@@ -699,7 +728,7 @@ function showDetail(){
       <div class="lbl">Note</div><textarea id="dnotes" placeholder="Le tue note…">${esc(it.n || "")}</textarea>
       <div class="row"><button class="btn" id="dsavenote">Salva nota</button></div>
       <div class="row"><button class="btn primary" id="ddl" ${it.o ? "" : "disabled"}>${ico("download")} Scarica originale</button>
-        ${it.o ? `<a class="btn" href="https://drive.google.com/file/d/${esc(it.o)}/view" target="_blank" rel="noopener">${ico("ext")} ${it.mt === "video" ? "Riproduci video su Drive" : "Drive"}</a>` : ""}</div>
+        ${it.o ? `<a class="btn" href="https://drive.google.com/file/d/${esc(it.o)}/view" target="_blank" rel="noopener">${ico("ext")} Drive</a>` : ""}</div>
       ${it.o ? "" : `<div class="muted">L'originale non è ancora stato caricato su Drive dal PC.</div>`}
     </div>`;
   d.scrollTop = 0;
@@ -710,6 +739,10 @@ function showDetail(){
   if (big) media(big).then(buf => { const u = URL.createObjectURL(new Blob([buf])); detailUrls.push(u); img.src = u; img.dataset.big = "1"; $("#dspin")?.remove(); })
     .catch(e => { const s = $("#dspin"); if (s) s.textContent = e instanceof AuthNeeded ? "sessione scaduta" : "anteprima non disponibile"; });
   else $("#dspin").textContent = "anteprima non ancora su Drive";
+  if (it.mt === "video" && it.o) {
+    viewer.insertAdjacentHTML("beforeend", playOverlay());
+    $("#vplay").onclick = e => { e.stopPropagation(); playVideo(it.o, it.t || it.f, viewer); };
+  }
   let lastTap = 0, sx = 0, sy = 0;
   viewer.addEventListener("click", () => { const now = Date.now(); if (now - lastTap < 300) viewer.classList.toggle("zoom"); lastTap = now; });
   viewer.addEventListener("touchstart", e => { if (e.touches.length === 1) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; } }, {passive: true});

@@ -43,6 +43,13 @@
             android:exported="false"
             android:theme="@style/Theme.CharacterVault" />
 
+        <activity
+            android:name=".VideoActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:exported="false"
+            android:screenOrientation="fullSensor"
+            android:theme="@style/Theme.CharacterVault" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"
