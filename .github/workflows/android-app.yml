@@ -50,20 +50,29 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Esegui COMPILA_APK_ANDROID.bat
+      - name: Esegui COMPILA_APK_ANDROID.bat da un percorso con "&", spazi e molto lungo
         shell: cmd
         run: |
+          set "DEST=%RUNNER_TEMP%\Users\Salvatore&Annalisa\Downloads\CharacterVault_5.0.1_sorgente\CharacterVault_5.0.1"
+          robocopy . "%DEST%" /E /XD .git /NFL /NDL /NJH /NJS /NP >nul
+          cd /d "%DEST%"
           set JAVA_HOME=
           set ANDROID_HOME=
           set ANDROID_SDK_ROOT=
-          echo.| call COMPILA_APK_ANDROID.bat > bat.log 2>&1
-          type bat.log
+          echo.| call COMPILA_APK_ANDROID.bat > "%GITHUB_WORKSPACE%\bat.log" 2>&1
+          type "%GITHUB_WORKSPACE%\bat.log"
           if not exist CharacterVault.apk exit /b 1
+          if not exist android_app\charactervault.jks exit /b 1
           type SHA1_ANDROID.txt
+          echo --- seconda esecuzione (strumenti gia' presenti)
+          echo.| call COMPILA_APK_ANDROID.bat > "%GITHUB_WORKSPACE%\bat2.log" 2>&1
+          findstr /c:"APK pronto" "%GITHUB_WORKSPACE%\bat2.log" || exit /b 1
       - name: Report errors
         if: failure()
         shell: bash
         run: |
-          msg=$(grep -nE "ERRORE|error|FAILURE|What went wrong|Could not|e: " bat.log | head -40 | sed ':a;N;$!ba;s/\n/%0A/g' | cut -c1-3800)
-          echo "::error title=BAT::${msg:-nessun dettaglio}"
-          tail -c 3000 bat.log | sed ':a;N;$!ba;s/\n/%0A/g' | sed 's/^/::error title=BAT tail::/'
+          for f in bat.log bat2.log; do [ -f $f ] || continue
+            msg=$(grep -nE "ERRORE|error|FAILURE|What went wrong|Could not|e: |nicht|not found|cannot" $f | head -40 | sed ':a;N;$!ba;s/\n/%0A/g' | cut -c1-3800)
+            echo "::error title=$f::${msg:-nessun dettaglio}"
+            echo "::error title=$f tail::$(tail -c 2500 $f | sed ':a;N;$!ba;s/\n/%0A/g')"
+          done
