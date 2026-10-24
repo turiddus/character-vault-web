@@ -15,6 +15,7 @@ val keystoreProps = Properties().apply {
 android {
     namespace = "io.github.turiddus.charactervault"
     compileSdk = 35
+    buildToolsVersion = "35.0.0"
 
     defaultConfig {
         applicationId = "io.github.turiddus.charactervault"

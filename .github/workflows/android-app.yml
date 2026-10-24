@@ -34,3 +34,26 @@ jobs:
         with:
           name: CharacterVault-apk
           path: android_app/app/build/outputs/apk/release/*.apk
+
+  # Prova reale del BAT per Windows su una macchina pulita: scarica Java, Android SDK e Gradle e crea l'APK.
+  bat-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Esegui COMPILA_APK_ANDROID.bat
+        shell: cmd
+        run: |
+          set JAVA_HOME=
+          set ANDROID_HOME=
+          set ANDROID_SDK_ROOT=
+          echo.| call COMPILA_APK_ANDROID.bat > bat.log 2>&1
+          type bat.log
+          if not exist CharacterVault.apk exit /b 1
+          type SHA1_ANDROID.txt
+      - name: Report errors
+        if: failure()
+        shell: bash
+        run: |
+          msg=$(grep -nE "ERRORE|error|FAILURE|What went wrong|Could not|e: " bat.log | head -40 | sed ':a;N;$!ba;s/\n/%0A/g' | cut -c1-3800)
+          echo "::error title=BAT::${msg:-nessun dettaglio}"
+          tail -c 3000 bat.log | sed ':a;N;$!ba;s/\n/%0A/g' | sed 's/^/::error title=BAT tail::/'
