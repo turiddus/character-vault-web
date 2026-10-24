@@ -22,6 +22,16 @@ jobs:
           chmod +x gradlew
           set -o pipefail
           ./gradlew --no-daemon --stacktrace assembleRelease 2>&1 | tee build.log
+      - name: Verifica APK
+        run: |
+          APK=android_app/app/build/outputs/apk/release/app-release.apk
+          BT=$(ls -d $ANDROID_HOME/build-tools/35.* | tail -1)
+          size=$(du -h "$APK" | cut -f1)
+          assets=$(unzip -l "$APK" | grep -cE "assets/(index.html|icon-192.png|manifest.webmanifest)")
+          badge=$("$BT/aapt" dump badging "$APK" | grep -E "^package:|^sdkVersion|^targetSdkVersion|uses-permission" | tr '\n' ' ')
+          signer=$("$BT/apksigner" verify --print-certs "$APK" | grep -m1 "SHA-1" || true)
+          intents=$("$BT/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -cE "android.intent.action.SEND" || true)
+          echo "::notice title=APK::dim=$size | file interfaccia=$assets/3 | azioni condividi=$intents | $badge | firma $signer"
       - name: Report errors
         if: failure()
         run: |
