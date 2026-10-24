@@ -51,6 +51,13 @@ main{padding:6px 10px calc(84px + var(--safe-b))}
 .card .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--text3);font-size:11px;padding:6px;text-align:center}
 .card.blur img{filter:blur(14px)}
 .sentinel{height:40px}
+.pending{margin:0 0 14px}
+.pending .ph-head{display:flex;align-items:center;gap:8px;margin:2px 4px 8px;font-size:13px;color:var(--text2)}
+.pending .ph-head b{color:var(--gold);font-weight:600}
+.pending .row-scroll{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.pending .row-scroll::-webkit-scrollbar{display:none}
+.pending .card{flex:none;width:96px;border:1px dashed var(--gold)}
+.pending .card .badge{color:var(--gold);left:5px;right:auto}
 .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .ent{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;text-align:left;padding:0}
 .ent .cv{aspect-ratio:4/5;background:var(--bg2)}
@@ -139,6 +146,7 @@ const S = {
   folders: null, index: null, byId: new Map(), entById: new Map(), thingById: new Map(), hay: new Map(),
   ops: load("cv_ops", []), query: "", filters: load("cv_filters", {}), view: "gallery", list: [], shown: 0,
   packs: new Map(), packOrder: [], packWait: new Map(), detailList: [], blurExplicit: load("cv_blur", false),
+  pending: [], localUploads: new Map(),
 };
 function load(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } }
 function save(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
@@ -284,6 +292,53 @@ function haystack(it){
     S.hay.set(it.i, h);
   }
   return h;
+}
+
+/* ============================================================= foto in attesa del PC */
+// Le foto caricate (da questo o da un altro telefono) restano nella cartella di origine finché un PC non le
+// importa: si mostrano subito, poi diventano schede complete quando il PC ripubblica l'indice.
+async function loadPending(){
+  const inbox = S.index?.inbox;
+  if (!inbox) { S.pending = []; return; }
+  const p = new URLSearchParams({q: `'${inbox}' in parents and trashed=false and mimeType contains 'image/'`,
+    fields: "files(id,name,createdTime,thumbnailLink,size)", orderBy: "createdTime desc", pageSize: "200",
+    supportsAllDrives: "true", includeItemsFromAllDrives: "true"});
+  try { S.pending = (await apiJson(`${API}/files?${p}`)).files || []; }
+  catch(e) { if (!(e instanceof AuthNeeded)) S.pending = S.pending || []; }
+}
+async function pendingSrc(f){
+  if (S.localUploads.has(f.id)) return S.localUploads.get(f.id);
+  if (f.thumbnailLink) return f.thumbnailLink.replace(/=s\d+$/, "=s400");
+  const u = URL.createObjectURL(new Blob([await media(f.id)])); S.localUploads.set(f.id, u); return u;
+}
+function pendingHtml(){
+  if (!S.pending.length || S.query || activeFilterChips().length) return "";
+  return `<section class="pending"><div class="ph-head">⏳ <b>${S.pending.length} in attesa del PC</b><span class="muted">· diventano schede complete quando un PC le elabora</span></div>
+    <div class="row-scroll">${S.pending.map(f => `<button class="card" data-pending="${esc(f.id)}"><img alt="" data-pid="${esc(f.id)}"><span class="badge">⏳</span></button>`).join("")}</div></section>`;
+}
+function bindPending(){
+  document.querySelectorAll("img[data-pid]").forEach(img => {
+    const f = S.pending.find(x => x.id === img.dataset.pid); if (!f) return;
+    pendingSrc(f).then(u => { img.src = u; img.onload = () => img.classList.add("ok");
+      img.onerror = async () => { if (img.dataset.retry) return; img.dataset.retry = "1"; f.thumbnailLink = ""; try { img.src = await pendingSrc(f); } catch(e){} }; }).catch(() => {});
+  });
+  document.querySelectorAll("[data-pending]").forEach(b => b.onclick = () => openPending(b.dataset.pending));
+}
+function openPending(id){
+  const f = S.pending.find(x => x.id === id); if (!f) return;
+  const d = document.createElement("div"); d.className = "sheet"; d.id = "detail";
+  d.innerHTML = `<div class="bar"><button class="icon-btn" id="pback">${ico("back")}</button><div class="t">${esc(f.name)}</div></div>
+    <div class="viewer"><img id="pimg" alt=""><div class="spin" id="pspin">caricamento…</div></div>
+    <div class="info"><h3><span>${esc(f.name)}</span></h3>
+      <div class="meta">Caricata il ${new Date(f.createdTime).toLocaleString("it-IT")}${f.size ? ` · ${f.size >= 1e6 ? (f.size / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(f.size / 1e3)) + " KB"}` : ""}</div>
+      <div class="banner"><span>⏳ In attesa del PC: appena Character Vault è aperto su un PC viene importata, riconosciuta e descritta da Codex, poi compare qui come scheda completa.</span></div></div>`;
+  document.body.appendChild(d); document.body.style.overflow = "hidden";
+  history.pushState({detail: id}, "");
+  $("#pback").onclick = () => history.back();
+  const show = u => { $("#pimg").src = u; $("#pspin")?.remove(); };
+  if (S.localUploads.has(f.id)) show(S.localUploads.get(f.id));
+  else media(f.id).then(buf => { const u = URL.createObjectURL(new Blob([buf])); S.localUploads.set(f.id, u); show(u); })
+    .catch(() => { const s = $("#pspin"); if (s) s.textContent = "anteprima non disponibile"; });
 }
 
 /* ============================================================= modifiche dal telefono */
@@ -479,7 +534,8 @@ function bindCommon(){
 let currentBase = [], currentTitle = "";
 function renderGallery(){
   currentBase = S.index.images; currentTitle = "Character Vault";
-  mountPage(`${pendingBanner()}<div class="status" id="status"></div><div class="grid" id="grid"></div><div class="sentinel" id="sentinel"></div>`, "Character Vault");
+  mountPage(`${pendingBanner()}${pendingHtml()}<div class="status" id="status"></div><div class="grid" id="grid"></div><div class="sentinel" id="sentinel"></div>`, "Character Vault");
+  bindPending();
   renderListOnly();
 }
 function pendingBanner(){
@@ -665,7 +721,7 @@ function renderAdd(){
   const inbox = S.index.inbox;
   mountPage(`<div class="section-title"><h2>Aggiungi immagini</h2></div>
     <div class="panel"><h4>Dal telefono alla galleria</h4>
-      <div class="muted">Le immagini vanno nella cartella Drive di origine: il PC con l'archivio aperto le importa, le analizza e le aggiunge alla galleria. Qui le vedrai dopo il prossimo aggiornamento.</div>
+      <div class="muted">Le foto compaiono subito in galleria tra «In attesa del PC». Appena Character Vault è aperto su un PC vengono importate, riconosciute e descritte da Codex, e diventano schede complete.</div>
       ${inbox ? `<div class="row" style="margin-top:14px"><label class="btn primary">${ico("image")} Scegli dalla galleria<input id="pick" type="file" accept="image/*" multiple hidden></label>
         <label class="btn">${ico("camera")} Scatta<input id="shot" type="file" accept="image/*" capture="environment" hidden></label></div>`
         : `<div class="banner" style="margin-top:12px"><span>Sul PC imposta la cartella di origine in Importa › Google Drive, poi attendi la prossima pubblicazione.</span></div>`}
@@ -683,8 +739,12 @@ async function uploadFiles(files, inbox){
     const bar = row.querySelector("progress"), st = row.querySelector(".muted");
     try {
       st.textContent = "caricamento…";
-      await uploadLarge(file, inbox, p => bar.value = p);
-      bar.value = 1; st.textContent = "inviata: la importerà il PC"; st.style.color = "var(--ok)";
+      const res = await uploadLarge(file, inbox, p => bar.value = p);
+      if (res && res.id) {
+        S.localUploads.set(res.id, url);
+        S.pending.unshift({id: res.id, name: file.name || "foto", createdTime: new Date().toISOString(), size: file.size});
+      }
+      bar.value = 1; st.textContent = "Caricata: è già in galleria tra «In attesa del PC»"; st.style.color = "var(--ok)";
     } catch(e) { st.textContent = e.message; st.style.color = "var(--danger)"; }
   }
 }
@@ -729,7 +789,7 @@ function bindLogin(){
 /* ============================================================= avvio */
 async function refresh(force){
   const btn = $("#refresh"); if (btn) btn.style.opacity = ".4";
-  try { const changed = await loadIndex(force); await flushOps(); render(); toast(changed ? "Archivio aggiornato" : "Già aggiornato"); }
+  try { const changed = await loadIndex(force); await loadPending(); await flushOps(); render(); toast(changed ? "Archivio aggiornato" : "Già aggiornato"); }
   catch(e) { if (!(e instanceof AuthNeeded)) toast(e.message, 5000); }
   finally { if (btn) btn.style.opacity = ""; }
 }
@@ -744,6 +804,7 @@ async function start(){
       try { await login(""); } catch(e) { if (cached) { showReconnect(); return; } throw e; }
     }
     await loadIndex(false);
+    await loadPending();
     await flushOps();
     render();
   } catch(e) {
