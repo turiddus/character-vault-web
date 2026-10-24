@@ -1,0 +1,49 @@
+name: Prova INSTALLA_PLAYER_VIDEO.bat
+on:
+  push:
+    branches: [android-app]
+    paths: [INSTALLA_PLAYER_VIDEO.bat, .github/workflows/player-video.yml]
+  workflow_dispatch:
+jobs:
+  player:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [con-python, senza-python]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Runtime embedded come quello di Character Vault
+        shell: pwsh
+        run: |
+          $root = "$env:RUNNER_TEMP\Programmi AI\CharacterVault"
+          New-Item -ItemType Directory -Force "$root\_runtime\python\Lib\site-packages" | Out-Null
+          Invoke-WebRequest https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip -OutFile emb.zip
+          Expand-Archive emb.zip "$root\_runtime\python" -Force
+          Set-Content -Encoding ascii "$root\_runtime\python\python311._pth" "python311.zip`n.`nLib/site-packages`n$root`nimport site`n"
+          python -m pip download PySide6-Essentials==6.10.1 shiboken6==6.10.1 --no-deps --only-binary=:all: --platform win_amd64 --python-version 3.11 -d wh -q
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          Get-ChildItem wh\*.whl | ForEach-Object { $z=[IO.Compression.ZipFile]::OpenRead($_.FullName); foreach($e in $z.Entries){ if($e.FullName.EndsWith('/')){continue}; $t=Join-Path "$root\_runtime\python\Lib\site-packages" $e.FullName; New-Item -ItemType Directory -Force (Split-Path $t) | Out-Null; [IO.Compression.ZipFileExtensions]::ExtractToFile($e,$t,$true) }; $z.Dispose() }
+          Copy-Item INSTALLA_PLAYER_VIDEO.bat $root
+          & "$root\_runtime\python\python.exe" -c "import PySide6; print('runtime PySide6', PySide6.__version__)"
+          & "$root\_runtime\python\python.exe" -m pip --version 2>&1 | Select-Object -First 1
+          "CVROOT=$root" | Out-File -Append $env:GITHUB_ENV
+      - name: Esegui il BAT
+        shell: cmd
+        run: |
+          if "${{ matrix.mode }}"=="senza-python" set "PATH=%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\WindowsPowerShell\v1.0"
+          if "${{ matrix.mode }}"=="senza-python" (where python && exit /b 1) || echo nessun python nel PATH
+          cd /d "%CVROOT%"
+          echo.| call INSTALLA_PLAYER_VIDEO.bat > "%GITHUB_WORKSPACE%\player.log" 2>&1
+          type "%GITHUB_WORKSPACE%\player.log"
+          "%CVROOT%\_runtime\python\python.exe" -c "import PySide6.QtMultimedia as m, PySide6.QtMultimediaWidgets; from PySide6 import QtCore; print('QtMultimedia OK', QtCore.qVersion())" || exit /b 1
+          findstr /c:"FATTO" "%GITHUB_WORKSPACE%\player.log" || exit /b 1
+          echo.| call INSTALLA_PLAYER_VIDEO.bat > "%GITHUB_WORKSPACE%\player2.log" 2>&1
+          findstr /c:"gia' installato" "%GITHUB_WORKSPACE%\player2.log" || exit /b 1
+      - name: Report
+        if: always()
+        shell: bash
+        run: |
+          [ -f player.log ] && echo "::notice title=${{ matrix.mode }}::$(sed ':a;N;$!ba;s/\n/%0A/g' player.log | cut -c1-2500)"
