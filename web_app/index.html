@@ -328,8 +328,8 @@ function haystack(it){
 async function loadPending(){
   const inbox = S.index?.inbox;
   if (!inbox) { S.pending = []; return; }
-  const p = new URLSearchParams({q: `'${inbox}' in parents and trashed=false and mimeType contains 'image/'`,
-    fields: "files(id,name,createdTime,thumbnailLink,size)", orderBy: "createdTime desc", pageSize: "200",
+  const p = new URLSearchParams({q: `'${inbox}' in parents and trashed=false and (mimeType contains 'image/' or mimeType contains 'video/')`,
+    fields: "files(id,name,mimeType,createdTime,thumbnailLink,size)", orderBy: "createdTime desc", pageSize: "200",
     supportsAllDrives: "true", includeItemsFromAllDrives: "true"});
   try { S.pending = (await apiJson(`${API}/files?${p}`)).files || []; }
   catch(e) { if (!(e instanceof AuthNeeded)) S.pending = S.pending || []; }
@@ -342,7 +342,7 @@ async function pendingSrc(f){
 function pendingHtml(){
   if (!S.pending.length || S.query || activeFilterChips().length) return "";
   return `<section class="pending"><div class="ph-head">⏳ <b>${S.pending.length} in attesa del PC</b><span class="muted">· diventano schede complete quando un PC le elabora</span></div>
-    <div class="row-scroll">${S.pending.map(f => `<button class="card" data-pending="${esc(f.id)}"><img alt="" data-pid="${esc(f.id)}"><span class="badge">⏳</span></button>`).join("")}</div></section>`;
+    <div class="row-scroll">${S.pending.map(f => `<button class="card" data-pending="${esc(f.id)}">${(f.mimeType || "").startsWith("video/") ? '<div class="ph">▶ Video</div>' : `<img alt="" data-pid="${esc(f.id)}">`}<span class="badge">⏳</span></button>`).join("")}</div></section>`;
 }
 function bindPending(){
   document.querySelectorAll("img[data-pid]").forEach(img => {
@@ -363,6 +363,16 @@ function openPending(id){
   document.body.appendChild(d); document.body.style.overflow = "hidden";
   history.pushState({detail: id}, "");
   $("#pback").onclick = () => history.back();
+  if ((f.mimeType || "").startsWith("video/")) {
+    if (S.localUploads.has(f.id)) {
+      $("#pimg").outerHTML = '<video id="pvideo" controls playsinline style="max-width:100%;max-height:70vh"></video>';
+      $("#pvideo").src = S.localUploads.get(f.id);
+      $("#pspin")?.remove();
+    } else {
+      $("#pspin").outerHTML = `<a class="btn primary" href="https://drive.google.com/file/d/${encodeURIComponent(f.id)}/view" target="_blank" rel="noopener">Riproduci video su Drive</a>`;
+    }
+    return;
+  }
   const show = u => { $("#pimg").src = u; $("#pspin")?.remove(); };
   if (S.localUploads.has(f.id)) show(S.localUploads.get(f.id));
   else media(f.id).then(buf => { const u = URL.createObjectURL(new Blob([buf])); S.localUploads.set(f.id, u); show(u); })
@@ -599,7 +609,7 @@ function more(){
   for (const it of S.list.slice(S.shown, S.shown + PAGE)) {
     const b = document.createElement("button");
     b.className = "card" + (S.blurExplicit && it.cr === "esplicito" ? " blur" : "");
-    b.innerHTML = `${it.k ? "" : `<div class="ph">${esc(it.t || it.f)}</div>`}<img alt="" data-id="${esc(it.i)}">${it.fav ? '<span class="badge">♥</span>' : it.r ? `<span class="badge">★${it.r}</span>` : ""}`;
+    b.innerHTML = `${it.mt === "video" ? '<span class="badge">▶ Video</span>' : ""}${it.k ? "" : `<div class="ph">${esc(it.t || it.f)}</div>`}<img alt="" data-id="${esc(it.i)}">${it.fav ? '<span class="badge">♥</span>' : it.r ? `<span class="badge">★${it.r}</span>` : ""}`;
     b.onclick = () => openDetail(it.i, S.list);
     frag.appendChild(b);
     io.observe(b.querySelector("img"));
@@ -680,7 +690,7 @@ function showDetail(){
     <div class="viewer" id="viewer"><img id="dimg" alt=""><div class="spin" id="dspin">anteprima…</div></div>
     <div class="info">
       <h3><span id="dtitle">${esc(it.t || it.f)}</span><button class="icon-btn" id="dedit">${ico("edit")}</button></h3>
-      <div class="meta">${[it.w && it.h ? `${it.w}×${it.h}` : "", it.dt.replace("T", " "), [it.c, it.sc].filter(Boolean).join(" › "), it.st, it.cr].filter(Boolean).map(esc).join(" · ")}</div>
+      <div class="meta">${[it.mt === "video" ? `Video · ${Math.round(it.dur || 0)} s · ${it.vc || ""}` : "", it.w && it.h ? `${it.w}×${it.h}` : "", it.dt.replace("T", " "), [it.c, it.sc].filter(Boolean).join(" › "), it.st, it.cr].filter(Boolean).map(esc).join(" · ")}</div>
       <div class="row"><button class="fav ${it.fav ? "on" : ""}" id="dfav">${it.fav ? "♥" : "♡"}</button><div class="stars">${[1,2,3,4,5].map(star).join("")}</div></div>
       ${ents.length ? `<div class="lbl">Personaggi</div><div class="tagwrap">${ents.map(e => `<button class="tag p" data-go="#/person/${encodeURIComponent(e.id)}">${esc(e.name)}</button>`).join("")}</div>` : ""}
       ${things.length ? `<div class="lbl">Luoghi, veicoli e oggetti</div><div class="tagwrap">${things.map(t => `<button class="tag t" data-go="#/thing/${encodeURIComponent(t.id)}">${esc(t.name)}</button>`).join("")}</div>` : ""}
@@ -689,14 +699,14 @@ function showDetail(){
       <div class="lbl">Note</div><textarea id="dnotes" placeholder="Le tue note…">${esc(it.n || "")}</textarea>
       <div class="row"><button class="btn" id="dsavenote">Salva nota</button></div>
       <div class="row"><button class="btn primary" id="ddl" ${it.o ? "" : "disabled"}>${ico("download")} Scarica originale</button>
-        ${it.o ? `<a class="btn" href="https://drive.google.com/file/d/${esc(it.o)}/view" target="_blank" rel="noopener">${ico("ext")} Drive</a>` : ""}</div>
+        ${it.o ? `<a class="btn" href="https://drive.google.com/file/d/${esc(it.o)}/view" target="_blank" rel="noopener">${ico("ext")} ${it.mt === "video" ? "Riproduci video su Drive" : "Drive"}</a>` : ""}</div>
       ${it.o ? "" : `<div class="muted">L'originale non è ancora stato caricato su Drive dal PC.</div>`}
     </div>`;
   d.scrollTop = 0;
   $("#dback").onclick = () => history.back();
   const viewer = $("#viewer"), img = $("#dimg");
   thumbUrl(it).then(u => { if (u) { detailUrls.push(u); if (!img.dataset.big) img.src = u; } }).catch(() => {});
-  const big = it.p || it.o;
+  const big = it.p || (it.mt === "video" ? "" : it.o);
   if (big) media(big).then(buf => { const u = URL.createObjectURL(new Blob([buf])); detailUrls.push(u); img.src = u; img.dataset.big = "1"; $("#dspin")?.remove(); })
     .catch(e => { const s = $("#dspin"); if (s) s.textContent = e instanceof AuthNeeded ? "sessione scaduta" : "anteprima non disponibile"; });
   else $("#dspin").textContent = "anteprima non ancora su Drive";
@@ -715,6 +725,10 @@ function showDetail(){
   d.querySelectorAll("[data-go]").forEach(b => b.onclick = () => { closeDetail(); history.replaceState(null, ""); location.hash = b.dataset.go; });
   d.querySelectorAll("[data-tag]").forEach(b => b.onclick = () => { closeDetail(); S.query = b.dataset.tag; history.replaceState(null, ""); go("#/"); });
   $("#ddl").onclick = async () => {
+    if (it.mt === "video") {
+      window.open(`https://drive.google.com/uc?export=download&id=${encodeURIComponent(it.o)}`, "_blank", "noopener");
+      return;
+    }
     const btn = $("#ddl"); btn.disabled = true; btn.textContent = "Download…";
     if (NATIVE) {   // l'app salva direttamente in Galleria › CharacterVault
       window.__cvNativeSaved = (id, ok) => { const b = $("#ddl"); if (!b) return; b.disabled = !!ok; b.innerHTML = `${ico("download")} ${ok ? "Salvata in Galleria" : "Scarica originale"}`; };
@@ -764,7 +778,7 @@ function renderAdd(){
   mountPage(`<div class="section-title"><h2>Aggiungi immagini</h2></div>
     <div class="panel"><h4>Dal telefono alla galleria</h4>
       <div class="muted">Le foto compaiono subito in galleria tra «In attesa del PC». Appena Character Vault è aperto su un PC vengono importate, riconosciute e descritte da Codex, e diventano schede complete.</div>
-      ${inbox ? `<div class="row" style="margin-top:14px"><label class="btn primary">${ico("image")} Scegli dalla galleria<input id="pick" type="file" accept="image/*" multiple hidden></label>
+      ${inbox ? `<div class="row" style="margin-top:14px"><label class="btn primary">${ico("image")} Scegli dalla galleria<input id="pick" type="file" accept="image/*,video/*" multiple hidden></label>
         <label class="btn">${ico("camera")} Scatta<input id="shot" type="file" accept="image/*" capture="environment" hidden></label></div>
         ${NATIVE ? `<div class="row"><button class="btn wide" id="ncrop">${ico("edit")} Ritaglia in medium close-up e carica</button></div>
         <div class="muted">Il volto viene trovato sul telefono e il riquadro proposto come nella galleria del PC; puoi spostarlo e cambiare formato. Puoi anche usare «Condividi › Character Vault» da qualsiasi app.</div>` : ""}`
@@ -779,7 +793,7 @@ async function uploadFiles(files, inbox){
   for (const file of files) {
     const row = document.createElement("div"); row.className = "up";
     const url = URL.createObjectURL(file);
-    row.innerHTML = `<img src="${url}" alt=""><div class="n"><b>${esc(file.name)}</b><progress max="1" value="0"></progress><span class="muted">in coda</span></div>`;
+    row.innerHTML = `${file.type.startsWith("video/") ? `<video src="${url}" preload="none" muted style="width:60px;height:60px"></video>` : `<img src="${url}" alt="">`}<div class="n"><b>${esc(file.name)}</b><progress max="1" value="0"></progress><span class="muted">in coda</span></div>`;
     box.prepend(row);
     const bar = row.querySelector("progress"), st = row.querySelector(".muted");
     try {
@@ -787,7 +801,7 @@ async function uploadFiles(files, inbox){
       const res = await uploadLarge(file, inbox, p => bar.value = p);
       if (res && res.id) {
         S.localUploads.set(res.id, url);
-        S.pending.unshift({id: res.id, name: file.name || "foto", createdTime: new Date().toISOString(), size: file.size});
+        S.pending.unshift({id: res.id, name: file.name || "media", mimeType: file.type, createdTime: new Date().toISOString(), size: file.size});
       }
       bar.value = 1; st.textContent = "Caricata: è già in galleria tra «In attesa del PC»"; st.style.color = "var(--ok)";
     } catch(e) { st.textContent = e.message; st.style.color = "var(--danger)"; }
@@ -797,7 +811,7 @@ async function uploadFiles(files, inbox){
 /* ----------------------------------------------------------- impostazioni */
 function renderSettings(){
   mountPage(`<div class="section-title"><h2>Impostazioni</h2></div>
-    <div class="panel"><h4>Archivio</h4><div class="muted">${S.index.images.length.toLocaleString("it-IT")} immagini · ${S.index.entities.length} personaggi · ${S.index.things.length} schede catalogo<br>Indice generato da ${esc(S.index.machine)} il ${new Date(S.index.generated).toLocaleString("it-IT")}</div>
+    <div class="panel"><h4>Archivio</h4><div class="muted">${S.index.images.length.toLocaleString("it-IT")} contenuti · ${S.index.entities.length} personaggi · ${S.index.things.length} schede catalogo<br>Indice generato da ${esc(S.index.machine)} il ${new Date(S.index.generated).toLocaleString("it-IT")}</div>
       <div class="row"><button class="btn" id="sref">${ico("refresh")} Aggiorna ora</button></div></div>
     <div class="panel"><h4>Privacy</h4><div class="switch"><span>Sfoca le miniature con contenuto «esplicito»</span><input type="checkbox" id="sblur" ${S.blurExplicit ? "checked" : ""}></div></div>
     <div class="panel"><h4>Spazio sul telefono</h4><div class="muted" id="sspace">Calcolo…</div><div class="row"><button class="btn" id="sclear">Svuota cache miniature</button></div></div>

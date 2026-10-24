@@ -177,10 +177,44 @@ class MainActivity : ComponentActivity() {
             toast("Sul PC imposta la cartella Drive di origine (Importa › Google Drive), poi riprova a condividere.")
             sharedQueue.clear(); return
         }
-        val uris = ArrayList(sharedQueue)
+        val all = ArrayList(sharedQueue)
         sharedQueue.clear()
-        openCropper(uris)
+        // I video (Character Vault 5) vanno caricati così come sono; le foto passano dal ritaglio.
+        val videos = all.filter { (contentResolver.getType(it) ?: "").startsWith("video/") }
+        val photos = ArrayList(all.filterNot { it in videos })
+        if (videos.isNotEmpty()) uploadVideos(videos)
+        if (photos.isNotEmpty()) openCropper(photos)
     }
+
+    private fun uploadVideos(videos: List<Uri>) {
+        toast("Invio di ${videos.size} video a Character Vault…")
+        GoogleAuth.authorize(this, consent, true) { token, error ->
+            if (token == null) { toast("Accesso a Google non riuscito: $error"); return@authorize }
+            io.execute {
+                var sent = 0
+                for (uri in videos) {
+                    try {
+                        val name = displayName(uri) ?: "video_${System.currentTimeMillis()}.mp4"
+                        val length = contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
+                        if (length <= 0) throw java.io.IOException("dimensione del video sconosciuta")
+                        DriveIO.upload(token, inbox, name, contentResolver.getType(uri) ?: "video/mp4", length,
+                            { contentResolver.openInputStream(uri)!! })
+                        sent++
+                    } catch (e: Exception) {
+                        if (e is DriveIO.HttpError && e.code == 401) GoogleAuth.invalidate(this, token)
+                        toast("Video non inviato: ${e.message}")
+                    }
+                }
+                if (sent > 0) js("window.__cvNativeUploaded && window.__cvNativeUploaded($sent)")
+            }
+        }
+    }
+
+    private fun displayName(uri: Uri): String? = try {
+        contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+            if (c.moveToFirst()) c.getString(0) else null
+        }
+    } catch (_: Exception) { null }
 
     private fun openCropper(uris: ArrayList<Uri>?) {
         if (inbox.isEmpty()) { toast("Archivio non ancora caricato: attendi qualche secondo."); return }
