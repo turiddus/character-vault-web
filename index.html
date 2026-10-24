@@ -366,12 +366,30 @@ const io = new IntersectionObserver(entries => {
     if (en.isIntersecting) {
       if (img.dataset.loaded) continue;
       img.dataset.loaded = "1";
-      thumbUrl(S.byId.get(img.dataset.id)).then(url => { if (url && img.dataset.loaded) { img.src = url; img.onload = () => img.classList.add("ok"); } }).catch(() => {});
+      thumbUrl(S.byId.get(img.dataset.id)).then(url => { if (url && img.dataset.loaded) { img.src = url; img.onload = () => img.classList.add("ok"); } })
+        .catch(err => thumbFailed(img, err));
     } else if (img.dataset.loaded && img.src) {
       URL.revokeObjectURL(img.src); img.removeAttribute("src"); img.classList.remove("ok"); delete img.dataset.loaded;
     }
   }
 }, {rootMargin: "600px 0px"});
+
+// Miniatura non scaricata (rete, sessione scaduta, pacchetto sostituito dal PC): si ritenta invece di
+// lasciare la casella vuota per sempre. Un pacchetto sparito da Drive vuol dire indice vecchio: lo si ricarica.
+let lastIndexReload = 0;
+function thumbFailed(img, err){
+  delete img.dataset.loaded;
+  const tries = +(img.dataset.tries || 0) + 1;
+  img.dataset.tries = tries;
+  const msg = String(err && err.message || "");
+  if (/not found|404|non trovato/i.test(msg) && Date.now() - lastIndexReload > 30000) {
+    lastIndexReload = Date.now();
+    loadIndex(true).then(() => renderListOnly()).catch(() => {});
+    return;
+  }
+  if (err instanceof AuthNeeded || tries > 4) return;   // dopo «Riconnetti» la pagina si ridisegna
+  setTimeout(() => { if (img.isConnected) { io.unobserve(img); io.observe(img); } }, 1500 * tries);
+}
 
 /* ============================================================= filtri e ricerca */
 function filtered(base){
