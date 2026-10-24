@@ -391,22 +391,25 @@ function uploadLarge(file, parent, onProgress){
 
 /* ============================================================= miniature a pacchetti */
 async function pack(no){
-  if (S.packs.has(no)) return S.packs.get(no);
-  if (S.packWait.has(no)) return S.packWait.get(no);
+  // Chiave = ID del file su Drive (non il numero): quando il PC rifà le miniature i numeri ripartono,
+  // ma i file sono nuovi; con il numero il telefono mostrava le miniature vecchie fino al riavvio.
   const id = S.index.packs[String(no)];
+  if (!id) throw new Error("pacchetto non nell'indice");
+  if (S.packs.has(id)) return S.packs.get(id);
+  if (S.packWait.has(id)) return S.packWait.get(id);
   const p = (async () => {
     const cache = await caches.open("cv-packs");
     const key = `https://cv.local/pack/${id}`;
     let hit = await cache.match(key), buf;
     if (hit) buf = await hit.arrayBuffer();
     else { buf = await media(id); await cache.put(key, new Response(buf)); }
-    S.packs.set(no, buf); S.packOrder.push(no);
+    S.packs.set(id, buf); S.packOrder.push(id);
     while (S.packOrder.length > 24) S.packs.delete(S.packOrder.shift());   // memoria contenuta
-    S.packWait.delete(no);
+    S.packWait.delete(id);
     return buf;
   })();
-  S.packWait.set(no, p);
-  p.catch(() => S.packWait.delete(no));
+  S.packWait.set(id, p);
+  p.catch(() => S.packWait.delete(id));
   return p;
 }
 async function thumbUrl(it){
@@ -812,6 +815,19 @@ async function start(){
     const m = $("#msg"); if (m) m.textContent = e.message; else toast(e.message, 6000);
   }
 }
+// Tornando nell'app (o ogni 3 minuti mentre è aperta): se il PC ha pubblicato novità si aggiorna da sola.
+let autoBusy = false;
+async function autoRefresh(){
+  if (autoBusy || !S.index || !S.token || Date.now() > S.tokenExp || $("#detail") || $("#fsheet")) return;
+  autoBusy = true;
+  try {
+    const changed = await loadIndex(false);
+    const before = S.pending.length; await loadPending();
+    if (changed || before !== S.pending.length) { render(); if (changed) toast("Archivio aggiornato"); }
+  } catch(e) {} finally { autoBusy = false; }
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") autoRefresh(); });
+setInterval(autoRefresh, 180000);
 restoreToken();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 window.addEventListener("load", start);
