@@ -169,7 +169,9 @@ const ICONS = {
 const ico = n => `<svg viewBox="0 0 24 24">${ICONS[n]}</svg>`;
 
 /* ============================================================= accesso Google */
-function clientId(){ return localStorage.getItem("cv_client_id") || ""; }
+// Dentro l'app Android (CVNative): accesso con l'account del telefono, senza ID client da incollare.
+const NATIVE = !!window.CVNative;
+function clientId(){ return NATIVE ? "android" : (localStorage.getItem("cv_client_id") || ""); }
 function rootId(){ return folderId(localStorage.getItem("cv_root") || DEFAULT_ROOT); }
 function restoreToken(){
   try { const t = JSON.parse(sessionStorage.getItem("cv_token") || "null"); if (t && t.exp > Date.now()) { S.token = t.v; S.tokenExp = t.exp; } } catch(e){}
@@ -190,7 +192,25 @@ function initAuth(){
   });
   return true;
 }
+function setToken(value, seconds){
+  S.token = value; S.tokenExp = Date.now() + Math.max(60, Number(seconds || 3000) - 90) * 1000;
+  try { sessionStorage.setItem("cv_token", JSON.stringify({v: S.token, exp: S.tokenExp})); } catch(e){}
+  localStorage.setItem("cv_logged", "1");
+}
+let nativeWait = null;
+window.__cvNativeToken = (token, seconds, error) => {
+  const p = nativeWait; nativeWait = null;
+  if (token) { setToken(token, seconds); p?.res(); } else p?.rej(new Error(error === "consent_required" ? "serve l'accesso a Google" : (error || "accesso non riuscito")));
+};
+function nativeLogin(interactive){
+  if (nativeWait) return nativeWait.promise;
+  let res, rej; const promise = new Promise((a, b) => { res = a; rej = b; });
+  nativeWait = {res, rej, promise};
+  window.CVNative.requestToken(!!interactive);
+  return promise;
+}
 function login(prompt=""){
+  if (NATIVE) return nativeLogin(prompt !== "");
   return new Promise((res, rej) => {
     if (!initAuth()) { rej(new Error("Servizio di accesso Google non caricato")); return; }
     S.pendingLogin = {res, rej};
@@ -198,11 +218,18 @@ function login(prompt=""){
   });
 }
 class AuthNeeded extends Error {}
-async function api(url, opts={}, raw=false){
-  if (!S.token || Date.now() > S.tokenExp) { showReconnect(); throw new AuthNeeded("sessione scaduta"); }
+async function api(url, opts={}, raw=false, retried=false){
+  if (!S.token || Date.now() > S.tokenExp) {
+    // Nell'app il token si rinnova da solo, in silenzio; nel browser serve un tocco su «Riconnetti».
+    if (NATIVE) { try { await nativeLogin(false); } catch(e) { showReconnect(); throw new AuthNeeded("sessione scaduta"); } }
+    else { showReconnect(); throw new AuthNeeded("sessione scaduta"); }
+  }
   const headers = Object.assign({Authorization: "Bearer " + S.token}, opts.headers || {});
   const r = await fetch(url, Object.assign({}, opts, {headers}));
-  if (r.status === 401) { S.token = null; showReconnect(); throw new AuthNeeded("sessione scaduta"); }
+  if (r.status === 401) {
+    if (NATIVE && !retried) { window.CVNative.invalidateToken(S.token); S.token = null; return api(url, opts, raw, true); }
+    S.token = null; showReconnect(); throw new AuthNeeded("sessione scaduta");
+  }
   if (!r.ok && !raw) { let m = r.status + ""; try { m = (await r.json()).error.message || m; } catch(e){} throw new Error("Drive: " + m); }
   return r;
 }
@@ -212,7 +239,7 @@ function showReconnect(){
   const b = document.createElement("div");
   b.id = "reconnect"; b.className = "banner"; b.style.cssText = "position:fixed;top:calc(8px + var(--safe-t));left:10px;right:10px;z-index:90";
   b.innerHTML = `<span>Sessione Google scaduta.</span><button class="btn primary">Riconnetti</button>`;
-  b.querySelector("button").onclick = async () => { try { await login(""); b.remove(); toast("Riconnesso"); render(); } catch(e){ toast(e.message); } };
+  b.querySelector("button").onclick = async () => { try { await login(NATIVE ? "consent" : ""); b.remove(); toast("Riconnesso"); render(); } catch(e){ toast(e.message); } };
   document.body.appendChild(b);
 }
 
@@ -262,6 +289,7 @@ async function loadCachedIndex(){
 }
 function setIndex(data){
   S.index = data;
+  if (NATIVE) { try { window.CVNative.setContext(data.inbox || ""); } catch(e){} }
   S.byId = new Map(data.images.map(x => [x.i, x]));
   S.entById = new Map(data.entities.map(x => [x.id, x]));
   S.thingById = new Map(data.things.map(x => [x.id, x]));
@@ -340,6 +368,12 @@ function openPending(id){
   else media(f.id).then(buf => { const u = URL.createObjectURL(new Blob([buf])); S.localUploads.set(f.id, u); show(u); })
     .catch(() => { const s = $("#pspin"); if (s) s.textContent = "anteprima non disponibile"; });
 }
+
+// Foto inviate dal ritaglio nativo o da «Condividi»: compaiono subito tra quelle in attesa.
+window.__cvNativeUploaded = async n => {
+  toast(`${n} ${n === 1 ? "foto aggiunta" : "foto aggiunte"}: in attesa del PC`);
+  await loadPending(); if (location.hash.startsWith("#/add")) go("#/"); else render();
+};
 
 /* ============================================================= modifiche dal telefono */
 async function queueOp(op){
@@ -682,6 +716,11 @@ function showDetail(){
   d.querySelectorAll("[data-tag]").forEach(b => b.onclick = () => { closeDetail(); S.query = b.dataset.tag; history.replaceState(null, ""); go("#/"); });
   $("#ddl").onclick = async () => {
     const btn = $("#ddl"); btn.disabled = true; btn.textContent = "Download…";
+    if (NATIVE) {   // l'app salva direttamente in Galleria › CharacterVault
+      window.__cvNativeSaved = (id, ok) => { const b = $("#ddl"); if (!b) return; b.disabled = !!ok; b.innerHTML = `${ico("download")} ${ok ? "Salvata in Galleria" : "Scarica originale"}`; };
+      window.CVNative.saveDriveFile(it.o, it.f || (it.i + (it.x || ".jpg")));
+      return;
+    }
     try {
       const buf = await media(it.o);
       const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([buf])); a.download = it.f || (it.i + (it.x || ".jpg"));
@@ -726,11 +765,14 @@ function renderAdd(){
     <div class="panel"><h4>Dal telefono alla galleria</h4>
       <div class="muted">Le foto compaiono subito in galleria tra «In attesa del PC». Appena Character Vault è aperto su un PC vengono importate, riconosciute e descritte da Codex, e diventano schede complete.</div>
       ${inbox ? `<div class="row" style="margin-top:14px"><label class="btn primary">${ico("image")} Scegli dalla galleria<input id="pick" type="file" accept="image/*" multiple hidden></label>
-        <label class="btn">${ico("camera")} Scatta<input id="shot" type="file" accept="image/*" capture="environment" hidden></label></div>`
+        <label class="btn">${ico("camera")} Scatta<input id="shot" type="file" accept="image/*" capture="environment" hidden></label></div>
+        ${NATIVE ? `<div class="row"><button class="btn wide" id="ncrop">${ico("edit")} Ritaglia in medium close-up e carica</button></div>
+        <div class="muted">Il volto viene trovato sul telefono e il riquadro proposto come nella galleria del PC; puoi spostarlo e cambiare formato. Puoi anche usare «Condividi › Character Vault» da qualsiasi app.</div>` : ""}`
         : `<div class="banner" style="margin-top:12px"><span>Sul PC imposta la cartella di origine in Importa › Google Drive, poi attendi la prossima pubblicazione.</span></div>`}
     </div><div id="uploads"></div>`, "Aggiungi");
   const handle = e => uploadFiles([...e.target.files], inbox);
   if (inbox) { $("#pick").onchange = handle; $("#shot").onchange = handle; }
+  if (inbox && NATIVE) $("#ncrop").onclick = () => window.CVNative.openCropper();
 }
 async function uploadFiles(files, inbox){
   const box = $("#uploads");
@@ -760,30 +802,31 @@ function renderSettings(){
     <div class="panel"><h4>Privacy</h4><div class="switch"><span>Sfoca le miniature con contenuto «esplicito»</span><input type="checkbox" id="sblur" ${S.blurExplicit ? "checked" : ""}></div></div>
     <div class="panel"><h4>Spazio sul telefono</h4><div class="muted" id="sspace">Calcolo…</div><div class="row"><button class="btn" id="sclear">Svuota cache miniature</button></div></div>
     <div class="panel"><h4>Collegamento</h4><label class="muted">Cartella dell'archivio</label><input class="txt" id="sroot" value="${esc(localStorage.getItem("cv_root") || DEFAULT_ROOT)}">
-      <label class="muted" style="display:block;margin-top:10px">Client ID OAuth (Web)</label><input class="txt" id="scid" value="${esc(clientId())}">
+      ${NATIVE ? "" : `<label class="muted" style="display:block;margin-top:10px">Client ID OAuth (Web)</label><input class="txt" id="scid" value="${esc(clientId())}">`}
       <div class="row"><button class="btn" id="ssave">Salva</button><button class="btn" id="sout">Esci da Google</button></div></div>`, "Impostazioni");
   $("#sref").onclick = () => refresh(true);
   $("#sblur").onchange = e => { S.blurExplicit = e.target.checked; save("cv_blur", S.blurExplicit); };
   navigator.storage?.estimate?.().then(e => $("#sspace").textContent = `Usati ${(e.usage / 1e6).toFixed(0)} MB (indice e miniature in cache).`);
   $("#sclear").onclick = async () => { await caches.delete("cv-packs"); S.packs.clear(); S.packOrder = []; toast("Cache svuotata"); render(); };
-  $("#ssave").onclick = () => { localStorage.setItem("cv_root", $("#sroot").value.trim()); localStorage.setItem("cv_client_id", $("#scid").value.trim()); S.folders = null; location.reload(); };
-  $("#sout").onclick = () => { try { google.accounts.oauth2.revoke(S.token, () => {}); } catch(e){} S.token = null; sessionStorage.clear(); localStorage.removeItem("cv_logged"); location.hash = ""; location.reload(); };
+  $("#ssave").onclick = () => { localStorage.setItem("cv_root", $("#sroot").value.trim()); if (!NATIVE) localStorage.setItem("cv_client_id", $("#scid").value.trim()); S.folders = null; location.reload(); };
+  $("#sout").onclick = () => { try { NATIVE ? window.CVNative.signOut() : google.accounts.oauth2.revoke(S.token, () => {}); } catch(e){} S.token = null; sessionStorage.clear(); localStorage.removeItem("cv_logged"); location.hash = ""; location.reload(); };
 }
 
 /* ----------------------------------------------------------- primo accesso */
 function loginHtml(){
   return `<div class="login"><img src="icon-192.png" alt=""><h1>Character Vault</h1><p>La tua galleria, dal telefono.</p>
-    <label>Client ID OAuth (tipo «Applicazione web»)</label><input class="txt" id="lcid" placeholder="123…apps.googleusercontent.com" value="${esc(clientId())}">
+    ${NATIVE ? "" : `<label>Client ID OAuth (tipo «Applicazione web»)</label><input class="txt" id="lcid" placeholder="123…apps.googleusercontent.com" value="${esc(clientId())}">`}
     <label>Cartella dell'archivio su Drive</label><input class="txt" id="lroot" value="${esc(localStorage.getItem("cv_root") || DEFAULT_ROOT)}">
     <button class="btn primary wide" id="lgo" style="margin-top:20px">Accedi con Google</button>
     <p class="muted" id="lmsg" style="margin-top:14px"></p></div>`;
 }
 function bindLogin(){
   $("#lgo").onclick = async () => {
-    const cid = $("#lcid").value.trim(), root = $("#lroot").value.trim();
-    if (!/\.apps\.googleusercontent\.com$/.test(cid)) { $("#lmsg").textContent = "Client ID non valido."; return; }
+    const cid = NATIVE ? "android" : $("#lcid").value.trim(), root = $("#lroot").value.trim();
+    if (!NATIVE && !/\.apps\.googleusercontent\.com$/.test(cid)) { $("#lmsg").textContent = "Client ID non valido."; return; }
     if (!folderId(root)) { $("#lmsg").textContent = "Link della cartella non valido."; return; }
-    localStorage.setItem("cv_client_id", cid); localStorage.setItem("cv_root", root);
+    if (!NATIVE) localStorage.setItem("cv_client_id", cid);
+    localStorage.setItem("cv_root", root);
     S.tokenClient = null;
     try { await login("consent"); start(); } catch(e) { localStorage.removeItem("cv_logged"); $("#lmsg").textContent = "Accesso non riuscito: " + e.message; }
   };
@@ -803,7 +846,7 @@ async function start(){
   if (cached) render();
   try {
     if (!S.token) {
-      await new Promise(r => { const wait = () => window.google?.accounts?.oauth2 ? r() : setTimeout(wait, 100); wait(); });
+      if (!NATIVE) await new Promise(r => { const wait = () => window.google?.accounts?.oauth2 ? r() : setTimeout(wait, 100); wait(); });
       try { await login(""); } catch(e) { if (cached) { showReconnect(); return; } throw e; }
     }
     await loadIndex(false);
@@ -818,7 +861,7 @@ async function start(){
 // Tornando nell'app (o ogni 3 minuti mentre è aperta): se il PC ha pubblicato novità si aggiorna da sola.
 let autoBusy = false;
 async function autoRefresh(){
-  if (autoBusy || !S.index || !S.token || Date.now() > S.tokenExp || $("#detail") || $("#fsheet")) return;
+  if (autoBusy || !S.index || (!NATIVE && (!S.token || Date.now() > S.tokenExp)) || $("#detail") || $("#fsheet")) return;
   autoBusy = true;
   try {
     const changed = await loadIndex(false);
@@ -829,7 +872,7 @@ async function autoRefresh(){
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") autoRefresh(); });
 setInterval(autoRefresh, 180000);
 restoreToken();
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+if (!NATIVE && "serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 window.addEventListener("load", start);
 </script>
 </body>
