@@ -1,0 +1,11 @@
+<resources>
+    <color name="bg0">#FF0C0A0F</color>
+    <color name="bg1">#FF121016</color>
+    <color name="bg2">#FF18141D</color>
+    <color name="bg3">#FF201B26</color>
+    <color name="border">#FF2A2330</color>
+    <color name="text">#FFEFE9F2</color>
+    <color name="text2">#FFB8AFC1</color>
+    <color name="accent">#FFC4364F</color>
+    <color name="gold">#FFD4AC62</color>
+</resources>

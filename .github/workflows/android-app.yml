@@ -1,0 +1,36 @@
+name: Character Vault Android APK
+on:
+  push:
+    branches: [android-app]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build APK
+        run: |
+          cd android_app
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          keytool -genkeypair -keystore ci.jks -alias vault -storepass civault -keypass civault -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Character Vault CI" 2>/dev/null
+          printf "storeFile=ci.jks\nstorePassword=civault\nkeyAlias=vault\nkeyPassword=civault\n" > keystore.properties
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace assembleRelease 2>&1 | tee build.log
+      - name: Report errors
+        if: failure()
+        run: |
+          cd android_app
+          grep -nE "^e: |error:|What went wrong|Could not|Execution failed|Caused by|^> |Unresolved|Type mismatch" build.log | head -45 > errors.txt || true
+          msg=$(sed ':a;N;$!ba;s/\n/%0A/g' errors.txt | cut -c1-3800)
+          echo "::error title=Gradle::${msg}"
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: CharacterVault-apk
+          path: android_app/app/build/outputs/apk/release/*.apk
