@@ -70,7 +70,18 @@ if not exist "%SDKMANAGER%" goto :sdk_missing
 :sdk_tools_ok
 if exist "%SDK%\platforms\android-35\android.jar" if exist "%SDK%\build-tools\35.0.0" goto :sdk_ok
 echo [2/5] Accetto le licenze Android SDK e installo piattaforma 35 e build-tools...
-(for /l %%i in (1,1,40) do @echo y) | "%SDKMANAGER%" --sdk_root="%SDK%" --licenses >nul 2>&1
+rem Licenze standard dell'SDK (le stesse che si accettano in Android Studio), scritte direttamente.
+if not exist "%SDK%\licenses" mkdir "%SDK%\licenses"
+> "%SDK%\licenses\android-sdk-license" (
+  echo.
+  echo 8933bad161af4178b1185d1a37fbf41ea5269c55
+  echo d56f5187479451eabf01fb78af6dfcb131a6481e
+  echo 24333f8a63b6825ea9c5514f83c2829b004d1fee
+)
+> "%SDK%\licenses\android-sdk-preview-license" (
+  echo.
+  echo 84831b9409646a918e30573bab4c9c91346d8abd
+)
 call "%SDKMANAGER%" --sdk_root="%SDK%" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 if errorlevel 1 (
   echo [ERRORE] Installazione dei componenti Android non riuscita - controlla la connessione.
