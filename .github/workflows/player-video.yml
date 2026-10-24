@@ -34,7 +34,9 @@ jobs:
         shell: cmd
         run: |
           if "${{ matrix.mode }}"=="senza-python" set "PATH=%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\WindowsPowerShell\v1.0"
-          if "${{ matrix.mode }}"=="senza-python" (where python && exit /b 1) || echo nessun python nel PATH
+          if "${{ matrix.mode }}"=="senza-python" del /f /q "%SystemRoot%\py.exe" "%SystemRoot%\pyw.exe" 2>nul
+          if "${{ matrix.mode }}"=="senza-python" (where python 2>nul && exit /b 1) || echo nessun python nel PATH
+          if "${{ matrix.mode }}"=="senza-python" (where py 2>nul && exit /b 1) || echo nessun py nel PATH
           cd /d "%CVROOT%"
           echo.| call INSTALLA_PLAYER_VIDEO.bat > "%GITHUB_WORKSPACE%\player.log" 2>&1
           type "%GITHUB_WORKSPACE%\player.log"
