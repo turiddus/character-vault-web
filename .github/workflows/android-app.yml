@@ -28,11 +28,15 @@ jobs:
           APK=android_app/app/build/outputs/apk/release/app-release.apk
           BT=$(ls -d $ANDROID_HOME/build-tools/35.* | tail -1)
           badge=$("$BT/aapt" dump badging "$APK")
-          echo "$badge" | grep -q "versionCode='710'" || { echo "::error::versionCode is not 710"; exit 1; }
+          echo "$badge" | grep -q "versionCode='720'" || { echo "::error::versionCode is not 720"; exit 1; }
+          # 7.2: adaptive icon (with monochrome layer) and splash theme must be in the package
+          "$BT/aapt" dump xmltree "$APK" res/mipmap-anydpi-v26/ic_launcher.xml >/dev/null 2>&1 || "$BT/aapt2" dump resources "$APK" | grep -q "mipmap/ic_launcher" || { echo "::error::adaptive icon missing"; exit 1; }
+          "$BT/aapt2" dump resources "$APK" | grep -q "style/Theme.CharacterVault.Starting" || { echo "::error::splash theme missing"; exit 1; }
+          "$BT/aapt2" dump resources "$APK" | grep -q "drawable/splash_icon_animated" || { echo "::error::animated splash icon missing"; exit 1; }
           # release resources are path-shortened by AGP 8 (res/xY.png): check that an icon is declared
           echo "$badge" | grep -qE "application-icon-160:'res/" || { echo "::error::launcher icon missing"; exit 1; }
           echo "$badge" | grep -E "^application: |application-icon-160" | head -2
-          for f in index.html icon-192.png icon-512.png manifest.webmanifest sw.js; do
+          for f in index.html ui72.js ui72.css icon-192.png icon-512.png manifest.webmanifest sw.js; do
             unzip -l "$APK" | grep -q "assets/$f" || { echo "::error::assets/$f missing"; exit 1; }
           done
           intents=$("$BT/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -cE "android.intent.action.SEND" || true)
