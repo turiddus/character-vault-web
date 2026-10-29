@@ -186,3 +186,9 @@ html.cols-fixed .grid .card{border-radius:calc(14px - var(--cols,3) * 1.5px)}
 .lk-bar{height:4px;border-radius:4px;background:var(--bg2);overflow:hidden;margin-top:3px}
 .lk-bar span{display:block;height:100%;background:var(--accent);border-radius:4px;transition:width .6s ease}
 .lk-banner{cursor:pointer}
+/* 8.2 Genesis */
+.gx-back{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:16px;animation:cvFade .18s ease-out}
+.gx-dialog{width:100%;max-width:520px;background:var(--bg1, #15121a);border:1px solid var(--border);border-radius:18px;padding:18px 16px calc(14px + var(--safe-b, 0px))}
+.gx-dialog p{margin:0 0 14px;font-size:15px;line-height:1.45}
+.gx-dialog .row{justify-content:flex-end;gap:10px}
+.gx-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border);padding:7px 0}

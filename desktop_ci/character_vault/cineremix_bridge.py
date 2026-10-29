@@ -204,6 +204,7 @@ class CineRemixBridge:
         latest = addons.http_json(addons.PYPI.format(name="yt-dlp"))["info"]
         version = latest["version"]
         marker["ytdlp_check"] = time.time()
+        updated = False
         if addons.version_key(version) > addons.version_key(marker.get("yt_dlp", "0")):
             ejs = addons.YtDlpAddon._ejs_requirement(latest)
             pip_dir = addons.ensure_pip(self.data_dir)
@@ -211,9 +212,10 @@ class CineRemixBridge:
                                                     "--no-warn-script-location", f"yt-dlp=={version}",
                                                     f"yt-dlp-ejs=={ejs}" if ejs else "yt-dlp-ejs"])
             marker["yt_dlp"] = version
+            updated = True
             addons._log(f"CineRemix: yt-dlp updated to {version}.")
         (self.runtime / MARKER).write_text(json.dumps(marker, indent=1), encoding="utf-8")
-        return {"yt_dlp": marker.get("yt_dlp", ""), "updated": marker.get("yt_dlp") == version}
+        return {"yt_dlp": marker.get("yt_dlp", ""), "updated": updated}
 
     # ------------------------------------------------------------------ launch
     def launch(self, files: list[str] | None = None) -> int:

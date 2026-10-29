@@ -5,6 +5,6 @@ video support, cloud archival workflows, and searchable offline catalog.
 """
 
 __app_name__ = "Character Vault"
-__version__ = "7.2.0"
-__codename__ = "Ultimate Adaptive Discovery"
+__version__ = "8.2.0"
+__codename__ = "Genesis Links"
 __author__ = "Character Vault"

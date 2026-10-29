@@ -181,6 +181,22 @@ def _():
     return found
 
 
+@step("genesis_key_dpapi")
+def _():
+    from character_vault.genesis import keystore
+    os.environ.pop("OPENAI_API_KEY", None)
+    fake = "sk-test-" + "0123456789abcdef" * 3
+    keystore.save_key(DATA, fake)
+    raw = keystore.key_file(DATA).read_bytes()
+    assert fake.encode() not in raw, "saved key must be encrypted"
+    assert keystore.api_key(DATA) == fake and keystore.source(DATA) == "saved"
+    os.environ["OPENAI_API_KEY"] = "sk-env-" + "9" * 30
+    assert keystore.api_key(DATA).startswith("sk-env-")
+    os.environ.pop("OPENAI_API_KEY")
+    assert keystore.clear_key(DATA) and keystore.api_key(DATA) == ""
+    return {"encrypted_bytes": len(raw)}
+
+
 R["failed"] = FAIL
 (DATA / "ci_report.json").write_text(json.dumps(R, indent=1, default=str), encoding="utf-8")
 sys.exit(1 if FAIL else 0)

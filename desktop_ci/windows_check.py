@@ -17,7 +17,7 @@ PY_SHA = "009d6bf7e3b2ddca3d784fa09f90fe54336d5b60f0e0f305c37f400bf83cfd3b"
 
 def main():
     work = Path(sys.argv[1]).resolve()
-    base = work / "Users" / "Salvatore&Annalisa" / "CharacterVault 7.3 (test)"
+    base = work / "Users" / "Salvatore&Annalisa" / "CharacterVault 8.2 (test)"
     shutil.rmtree(base, ignore_errors=True)
     shutil.copytree(HERE, base, ignore=shutil.ignore_patterns("windows_check.py", "__pycache__"))
     zip_path = work / "python-embed.zip"
