@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -10,7 +10,14 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+if (!window.CVNative) {
+  const authScript = document.createElement("script");
+  authScript.src = "https://accounts.google.com/gsi/client";
+  authScript.async = true;
+  document.head.appendChild(authScript);
+}
+</script>
 <style>
 :root{
   --bg0:#0c0a0f;--bg1:#121016;--bg2:#18141d;--bg3:#201b26;--bg4:#29222f;
@@ -49,6 +56,8 @@ main{padding:6px 10px calc(84px + var(--safe-b))}
 .card img.ok{opacity:1}
 .card .badge{position:absolute;top:5px;right:5px;font-size:11px;background:rgba(12,10,15,.72);border-radius:999px;padding:1px 6px;color:var(--gold)}
 .card .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--text3);font-size:11px;padding:6px;text-align:center}
+/* Never draw an image title over its pixels. Keep names in details and accessibility labels. */
+.card .ph:has(+ img.ok){display:none}
 .card.blur img{filter:blur(14px)}
 .sentinel{height:40px}
 .pending{margin:0 0 14px}
@@ -67,7 +76,7 @@ main{padding:6px 10px calc(84px + var(--safe-b))}
 .ent span{display:block;padding:0 10px 9px;color:var(--text3);font-size:12px}
 .section-title{display:flex;align-items:center;gap:10px;margin:6px 4px 12px}
 .section-title h2{font:600 18px Cinzel,serif;margin:0;flex:1;letter-spacing:.04em}
-nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(18,16,22,.96);border-top:1px solid var(--border);padding:6px 4px calc(6px + var(--safe-b));backdrop-filter:blur(10px)}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(6,1fr);background:rgba(18,16,22,.96);border-top:1px solid var(--border);padding:6px 4px calc(6px + var(--safe-b));backdrop-filter:blur(10px)}
 nav.tabs button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--text3);padding:4px 0}
 nav.tabs svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav.tabs button.on{color:var(--accent2)}
@@ -126,6 +135,31 @@ label.btn{cursor:pointer}
 .login p{color:var(--text2);text-align:center;margin:0 0 22px}
 .login label{display:block;font-size:12px;color:var(--text3);margin:12px 0 4px;letter-spacing:.06em;text-transform:uppercase}
 @media(min-width:700px){.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.viewer{height:70vh}}
+
+/* Ultimate statistics: responsive and touch-friendly, no external chart engine. */
+.viz-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px}
+.viz-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:14px}
+.viz-kpi strong{display:block;font-size:24px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.viz-kpi span{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.viz-sub{color:var(--text3);font-size:12px;margin:4px 0 12px}
+.viz-grid{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+.viz-bar{display:grid;grid-template-columns:minmax(66px,105px) minmax(0,1fr) 40px;gap:7px;align-items:center;width:100%;padding:10px 1px;border:0;border-bottom:1px solid var(--border);background:transparent;text-align:left;font-size:12px;color:var(--text2)}
+.viz-bar:active{opacity:.7}
+.viz-bar .viz-track{height:11px;border-radius:9px;overflow:hidden;background:var(--bg4)}
+.viz-bar .viz-fill{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--accent),var(--gold))}
+.viz-bar b{text-align:right;font-variant-numeric:tabular-nums;color:var(--text)}
+.viz-donut{width:155px;height:155px;margin:8px auto;border-radius:50%;display:grid;place-items:center}
+.viz-donut .center{width:113px;height:113px;border-radius:50%;background:var(--bg1);display:flex;align-items:center;justify-content:center;flex-direction:column}
+.viz-donut strong{font-size:28px}
+.viz-legend{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.viz-legend span{font-size:11px;color:var(--text2)}
+.viz-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+.viz-matrix{display:grid;gap:4px;overflow-x:auto;font-size:11px}
+.viz-matrix button{min-height:32px;border:1px solid var(--border);border-radius:7px;font-weight:600;min-width:0}
+.viz-matrix .viz-head{text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);font-size:10px;align-self:center}
+.viz-matrix .viz-row-head{text-align:right;padding-right:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viz-timeline{width:100%;height:auto;display:block;min-height:124px;max-height:220px}
+@media(min-width:780px){.viz-kpis{grid-template-columns:repeat(4,1fr)}.viz-grid{grid-template-columns:minmax(0,1.4fr) minmax(240px,1fr)}}
 </style>
 </head>
 <body>
@@ -136,15 +170,16 @@ label.btn{cursor:pointer}
 const SCOPE = "https://www.googleapis.com/auth/drive";
 const API = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3";
-const DEFAULT_ROOT = "https://drive.google.com/drive/folders/1sdMrquwJMYVVqEQsHrooYsbLmYYO8OGB";
+const DEFAULT_ROOT = "";
 const INDEX_NAME = "indice_web.json.gz";
 const PAGE = 120;
-const GROUPS = {donna: "Donne", uomo: "Uomini", altro: "Creature e altri"};
+const GROUPS = {donna: "Women", uomo: "Men", altro: "Creatures and others"};
 
 const S = {
   token: null, tokenExp: 0, tokenClient: null, pendingLogin: null,
   folders: null, index: null, byId: new Map(), entById: new Map(), thingById: new Map(), hay: new Map(),
   ops: load("cv_ops", []), query: "", filters: load("cv_filters", {}), view: "gallery", list: [], shown: 0,
+  statsFilters: load("cv_v7_stats_filters", {hair_color:"black",eye_color:"green",logic:"AND"}),
   packs: new Map(), packOrder: [], packWait: new Map(), detailList: [], blurExplicit: load("cv_blur", false),
   pending: [], localUploads: new Map(),
 };
@@ -152,6 +187,7 @@ function load(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.pa
 function save(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
 const $ = (sel, root=document) => root.querySelector(sel);
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function displayLabel(value){ return S.index?.labels?.[value] || value; }
 function norm(s){ return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
 function folderId(text){ const m = String(text||"").match(/\/folders\/([A-Za-z0-9_-]{10,})/) || String(text||"").match(/[?&]id=([A-Za-z0-9_-]{10,})/); return m ? m[1] : (/^[A-Za-z0-9_-]{10,}$/.test(String(text||"").trim()) ? String(text).trim() : ""); }
 function toast(text, ms=3200){ const t = document.createElement("div"); t.className = "toast"; t.textContent = text; document.body.appendChild(t); setTimeout(() => t.remove(), ms); }
@@ -188,7 +224,7 @@ function initAuth(){
       localStorage.setItem("cv_logged", "1");
       p?.res();
     },
-    error_callback: e => { const p = S.pendingLogin; S.pendingLogin = null; p?.rej(new Error(e?.message || e?.type || "accesso annullato")); },
+    error_callback: e => { const p = S.pendingLogin; S.pendingLogin = null; p?.rej(new Error(e?.message || e?.type || "sign-in canceled")); },
   });
   return true;
 }
@@ -200,7 +236,7 @@ function setToken(value, seconds){
 let nativeWait = null;
 window.__cvNativeToken = (token, seconds, error) => {
   const p = nativeWait; nativeWait = null;
-  if (token) { setToken(token, seconds); p?.res(); } else p?.rej(new Error(error === "consent_required" ? "serve l'accesso a Google" : (error || "accesso non riuscito")));
+  if (token) { setToken(token, seconds); p?.res(); } else p?.rej(new Error(error === "consent_required" ? "Google sign-in is required" : (error || "sign-in failed")));
 };
 function nativeLogin(interactive){
   if (nativeWait) return nativeWait.promise;
@@ -212,7 +248,7 @@ function nativeLogin(interactive){
 function login(prompt=""){
   if (NATIVE) return nativeLogin(prompt !== "");
   return new Promise((res, rej) => {
-    if (!initAuth()) { rej(new Error("Servizio di accesso Google non caricato")); return; }
+    if (!initAuth()) { rej(new Error("Google sign-in service has not loaded")); return; }
     S.pendingLogin = {res, rej};
     S.tokenClient.requestAccessToken({prompt});
   });
@@ -220,15 +256,15 @@ function login(prompt=""){
 class AuthNeeded extends Error {}
 async function api(url, opts={}, raw=false, retried=false){
   if (!S.token || Date.now() > S.tokenExp) {
-    // Nell'app il token si rinnova da solo, in silenzio; nel browser serve un tocco su «Riconnetti».
-    if (NATIVE) { try { await nativeLogin(false); } catch(e) { showReconnect(); throw new AuthNeeded("sessione scaduta"); } }
-    else { showReconnect(); throw new AuthNeeded("sessione scaduta"); }
+    // Nell'app il token si rinnova da solo, in silenzio; nel browser serve un tocco su «Reconnect».
+    if (NATIVE) { try { await nativeLogin(false); } catch(e) { showReconnect(); throw new AuthNeeded("session expired"); } }
+    else { showReconnect(); throw new AuthNeeded("session expired"); }
   }
   const headers = Object.assign({Authorization: "Bearer " + S.token}, opts.headers || {});
   const r = await fetch(url, Object.assign({}, opts, {headers}));
   if (r.status === 401) {
     if (NATIVE && !retried) { window.CVNative.invalidateToken(S.token); S.token = null; return api(url, opts, raw, true); }
-    S.token = null; showReconnect(); throw new AuthNeeded("sessione scaduta");
+    S.token = null; showReconnect(); throw new AuthNeeded("session expired");
   }
   if (!r.ok && !raw) { let m = r.status + ""; try { m = (await r.json()).error.message || m; } catch(e){} throw new Error("Drive: " + m); }
   return r;
@@ -238,25 +274,25 @@ function showReconnect(){
   if ($("#reconnect")) return;
   const b = document.createElement("div");
   b.id = "reconnect"; b.className = "banner"; b.style.cssText = "position:fixed;top:calc(8px + var(--safe-t));left:10px;right:10px;z-index:90";
-  b.innerHTML = `<span>Sessione Google scaduta.</span><button class="btn primary">Riconnetti</button>`;
-  b.querySelector("button").onclick = async () => { try { await login(NATIVE ? "consent" : ""); b.remove(); toast("Riconnesso"); render(); } catch(e){ toast(e.message); } };
+  b.innerHTML = `<span>Google session expired.</span><button class="btn primary">Reconnect</button>`;
+  b.querySelector("button").onclick = async () => { try { await login(NATIVE ? "consent" : ""); b.remove(); toast("Reconnected"); render(); } catch(e){ toast(e.message); } };
   document.body.appendChild(b);
 }
 
 /* ============================================================= Drive */
-async function children(parent, name, folders){
+async function children(parent, name, folders, fresh=false){
   let q = `'${parent}' in parents and trashed=false`;
   if (name) q += ` and name='${name.replace(/'/g, "\\'")}'`;
   if (folders === true) q += " and mimeType='application/vnd.google-apps.folder'";
-  const p = new URLSearchParams({q, fields: "files(id,name,modifiedTime,size)", pageSize: "100", supportsAllDrives: "true", includeItemsFromAllDrives: "true"});
-  return (await apiJson(`${API}/files?${p}`)).files || [];
+  const p = new URLSearchParams({q, fields: "files(id,name,modifiedTime,size,version)", pageSize: "100", supportsAllDrives: "true", includeItemsFromAllDrives: "true"});
+  return (await apiJson(`${API}/files?${p}`, fresh ? {cache: "no-store"} : undefined)).files || [];
 }
 async function media(id){ return (await api(`${API}/files/${id}?alt=media&supportsAllDrives=true`)).arrayBuffer(); }
 async function resolveFolders(){
   if (S.folders) return S.folders;
   const root = rootId();
   const web = (await children(root, "web", true))[0];
-  if (!web) throw new Error("Nella cartella dell'archivio non c'è ancora la web app: apri Character Vault sul PC (versione 4.3) e attendi la prima pubblicazione.");
+  if (!web) throw new Error("The archive has no web index yet. Open Character Vault on the desktop and wait for its first publication.");
   const mod = (await children(web.id, "modifiche", true))[0];
   S.folders = {root, web: web.id, modifiche: mod ? mod.id : ""};
   return S.folders;
@@ -269,17 +305,23 @@ async function gunzipJson(buf){
 /* ============================================================= indice */
 async function loadIndex(force=false){
   const f = await resolveFolders();
-  const file = (await children(f.web, INDEX_NAME))[0];
-  if (!file) throw new Error("Indice non ancora pubblicato dal PC.");
+  const file = (await children(f.web, INDEX_NAME, false, NATIVE))[0];
+  if (!file) throw new Error("The desktop has not published an index yet.");
   const cache = await caches.open("cv-data");
   const key = "https://cv.local/index";
   const hit = await cache.match(key);
-  if (!force && hit && hit.headers.get("x-mod") === file.modifiedTime) {
+  // On Android, a Drive index can be overwritten under the same file ID.
+  // Compare Drive's file version as well as its modification timestamp to
+  // prevent a stale WebView cache from hiding newly published photographs.
+  const revision = [file.id, file.version || "", file.modifiedTime || "", file.size || ""].join(":");
+  const same = NATIVE ? hit?.headers.get("x-drive-revision") === revision
+                      : hit?.headers.get("x-mod") === file.modifiedTime;
+  if (!force && hit && same) {
     setIndex(await hit.json());
     return false;
   }
   const data = await gunzipJson(await media(file.id));
-  await cache.put(key, new Response(JSON.stringify(data), {headers: {"x-mod": file.modifiedTime, "content-type": "application/json"}}));
+  await cache.put(key, new Response(JSON.stringify(data), {headers: {"x-mod": file.modifiedTime, "x-drive-revision": revision, "content-type": "application/json"}}));
   setIndex(data);
   return true;
 }
@@ -291,6 +333,7 @@ function setIndex(data){
   S.index = data;
   if (NATIVE) { try { window.CVNative.setContext(data.inbox || ""); } catch(e){} }
   S.byId = new Map(data.images.map(x => [x.i, x]));
+  S.subjectById = new Map((data.subjects||[]).map(x=>[x.id,x]));
   S.entById = new Map(data.entities.map(x => [x.id, x]));
   S.thingById = new Map(data.things.map(x => [x.id, x]));
   // modifiche già applicate dal PC (indice generato dopo l'invio) non servono più
@@ -322,16 +365,20 @@ function haystack(it){
   return h;
 }
 
-/* ============================================================= foto in attesa del PC */
+/* ============================================================= foto awaiting desktop processing */
 // Le foto caricate (da questo o da un altro telefono) restano nella cartella di origine finché un PC non le
-// importa: si mostrano subito, poi diventano schede complete quando il PC ripubblica l'indice.
+// importa: si mostrano subito, poi diventano records complete quando il PC ripubblica l'indice.
 async function loadPending(){
   const inbox = S.index?.inbox;
   if (!inbox) { S.pending = []; return; }
-  const p = new URLSearchParams({q: `'${inbox}' in parents and trashed=false and mimeType contains 'image/'`,
-    fields: "files(id,name,createdTime,thumbnailLink,size)", orderBy: "createdTime desc", pageSize: "200",
+  const p = new URLSearchParams({q: `'${inbox}' in parents and trashed=false and (mimeType contains 'image/' or mimeType contains 'video/')`,
+    fields: "files(id,name,mimeType,createdTime,thumbnailLink,size)", orderBy: "createdTime desc", pageSize: "200",
     supportsAllDrives: "true", includeItemsFromAllDrives: "true"});
-  try { S.pending = (await apiJson(`${API}/files?${p}`)).files || []; }
+  try {
+    // Already imported by the desktop (complete record in the gallery): do not list them twice.
+    const done = new Set(S.index?.inbox_done || []);
+    S.pending = ((await apiJson(`${API}/files?${p}`)).files || []).filter(f => !done.has(f.id));
+  }
   catch(e) { if (!(e instanceof AuthNeeded)) S.pending = S.pending || []; }
 }
 async function pendingSrc(f){
@@ -341,8 +388,8 @@ async function pendingSrc(f){
 }
 function pendingHtml(){
   if (!S.pending.length || S.query || activeFilterChips().length) return "";
-  return `<section class="pending"><div class="ph-head">⏳ <b>${S.pending.length} in attesa del PC</b><span class="muted">· diventano schede complete quando un PC le elabora</span></div>
-    <div class="row-scroll">${S.pending.map(f => `<button class="card" data-pending="${esc(f.id)}"><img alt="" data-pid="${esc(f.id)}"><span class="badge">⏳</span></button>`).join("")}</div></section>`;
+  return `<section class="pending"><div class="ph-head">⏳ <b>${S.pending.length} awaiting desktop processing</b><span class="muted">· complete records appear after desktop processing</span></div>
+    <div class="row-scroll">${S.pending.map(f => `<button class="card" data-pending="${esc(f.id)}">${(f.mimeType || "").startsWith("video/") ? '<div class="ph">▶ Video</div>' : `<img alt="" data-pid="${esc(f.id)}">`}<span class="badge">⏳</span></button>`).join("")}</div></section>`;
 }
 function bindPending(){
   document.querySelectorAll("img[data-pid]").forEach(img => {
@@ -356,24 +403,63 @@ function openPending(id){
   const f = S.pending.find(x => x.id === id); if (!f) return;
   const d = document.createElement("div"); d.className = "sheet"; d.id = "detail";
   d.innerHTML = `<div class="bar"><button class="icon-btn" id="pback">${ico("back")}</button><div class="t">${esc(f.name)}</div></div>
-    <div class="viewer"><img id="pimg" alt=""><div class="spin" id="pspin">caricamento…</div></div>
+    <div class="viewer"><img id="pimg" alt=""><div class="spin" id="pspin">loading…</div></div>
     <div class="info"><h3><span>${esc(f.name)}</span></h3>
-      <div class="meta">Caricata il ${new Date(f.createdTime).toLocaleString("it-IT")}${f.size ? ` · ${f.size >= 1e6 ? (f.size / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(f.size / 1e3)) + " KB"}` : ""}</div>
-      <div class="banner"><span>⏳ In attesa del PC: appena Character Vault è aperto su un PC viene importata, riconosciuta e descritta da Codex, poi compare qui come scheda completa.</span></div></div>`;
+      <div class="meta">Uploaded on ${new Date(f.createdTime).toLocaleString("en-US")}${f.size ? ` · ${f.size >= 1e6 ? (f.size / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(f.size / 1e3)) + " KB"}` : ""}</div>
+      <div class="banner"><span>⏳ Awaiting desktop processing: when Character Vault opens on a desktop, the asset is imported, recognized and described by Codex, then appears here as a complete record.</span></div></div>`;
   document.body.appendChild(d); document.body.style.overflow = "hidden";
   history.pushState({detail: id}, "");
   $("#pback").onclick = () => history.back();
+  if ((f.mimeType || "").startsWith("video/")) {
+    if (S.localUploads.has(f.id)) {
+      $("#pimg").outerHTML = '<video id="pvideo" controls playsinline style="max-width:100%;max-height:70vh"></video>';
+      $("#pvideo").src = S.localUploads.get(f.id);
+      $("#pspin")?.remove();
+    } else {
+      $("#pspin").remove();
+      const viewer = d.querySelector(".viewer");
+      viewer.insertAdjacentHTML("beforeend", playOverlay());
+      $("#vplay").onclick = () => playVideo(f.id, f.name, viewer);
+    }
+    return;
+  }
   const show = u => { $("#pimg").src = u; $("#pspin")?.remove(); };
   if (S.localUploads.has(f.id)) show(S.localUploads.get(f.id));
   else media(f.id).then(buf => { const u = URL.createObjectURL(new Blob([buf])); S.localUploads.set(f.id, u); show(u); })
-    .catch(() => { const s = $("#pspin"); if (s) s.textContent = "anteprima non disponibile"; });
+    .catch(() => { const s = $("#pspin"); if (s) s.textContent = "preview unavailable"; });
 }
 
 // Foto inviate dal ritaglio nativo o da «Condividi»: compaiono subito tra quelle in attesa.
 window.__cvNativeUploaded = async n => {
-  toast(`${n} ${n === 1 ? "foto aggiunta" : "foto aggiunte"}: in attesa del PC`);
+  toast(`${n} ${n === 1 ? "photo added" : "photos added"}: awaiting desktop processing`);
   await loadPending(); if (location.hash.startsWith("#/add")) go("#/"); else render();
 };
+
+/* ============================================================= riproduzione video */
+// App Android: player nativo che trasmette da Drive (salto avanti/indietro, nessun download completo).
+// Browser: il video viene scaricato e poi riprodotto nella pagina (i video lunghi richiedono tempo e dati).
+async function playVideo(fileId, title, container){
+  if (NATIVE && window.CVNative.playVideo) { window.CVNative.playVideo(fileId, title || "Video"); return; }
+  container.innerHTML = `<div class="spin" id="vprog">downloading video…</div>`;
+  try {
+    const r = await api(`${API}/files/${fileId}?alt=media&supportsAllDrives=true`);
+    const total = Number(r.headers.get("content-length") || 0);
+    const reader = r.body.getReader(); const parts = []; let got = 0;
+    for (;;) {
+      const {done, value} = await reader.read(); if (done) break;
+      parts.push(value); got += value.length;
+      const p = $("#vprog"); if (p) p.textContent = total ? `download ${Math.round(got / total * 100)}% · ${(got / 1e6).toFixed(1)} MB` : `download ${(got / 1e6).toFixed(1)} MB`;
+    }
+    const url = URL.createObjectURL(new Blob(parts, {type: r.headers.get("content-type") || "video/mp4"}));
+    detailUrls.push(url);
+    container.innerHTML = `<video controls autoplay playsinline style="max-width:100%;max-height:100%"></video>`;
+    const v = container.querySelector("video"); v.src = url;
+    v.onerror = () => { container.innerHTML = `<div class="spin">the browser cannot play this format. Use Download original, or Convert to MP4 on the desktop</div>`; };
+  } catch(e) { container.innerHTML = `<div class="spin">${esc(e.message)}</div>`; }
+}
+function playOverlay(){
+  return `<button class="btn primary" id="vplay" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:17px;padding:14px 22px;box-shadow:0 6px 24px rgba(0,0,0,.6)">▶ Play</button>`;
+}
 
 /* ============================================================= modifiche dal telefono */
 async function queueOp(op){
@@ -386,7 +472,7 @@ async function flushOps(){
   if (!todo.length) return;
   try {
     const f = await resolveFolders();
-    if (!f.modifiche) throw new Error("cartella modifiche assente");
+    if (!f.modifiche) throw new Error("The archive changes folder is missing");
     const body = JSON.stringify(todo.map(({sent, sentAt, ...o}) => o));
     const name = `${Math.floor(Date.now()/1000)}_${Math.random().toString(36).slice(2,8)}.json`;
     await uploadSmall(new Blob([body], {type: "application/json"}), name, f.modifiche);
@@ -394,7 +480,7 @@ async function flushOps(){
     todo.forEach(o => { o.sent = true; o.sentAt = now; });
     save("cv_ops", S.ops);
   } catch(e) {
-    if (!(e instanceof AuthNeeded)) toast("Modifica salvata sul telefono: verrà inviata appena possibile");
+    if (!(e instanceof AuthNeeded)) toast("Edit saved on this device; it will be sent when the connection is available");
   }
 }
 async function uploadSmall(blob, name, parent){
@@ -408,19 +494,65 @@ function uploadLarge(file, parent, onProgress){
     try {
       const init = await api(`${UPLOAD}/files?uploadType=resumable&supportsAllDrives=true&fields=id`, {
         method: "POST", headers: {"Content-Type": "application/json; charset=UTF-8", "X-Upload-Content-Type": file.type || "application/octet-stream", "X-Upload-Content-Length": String(file.size)},
-        body: JSON.stringify({name: file.name || `foto_${Date.now()}.jpg`, parents: [parent]})});
+        body: JSON.stringify({name: file.name || `photo_${Date.now()}.jpg`, parents: [parent]})});
       const location = init.headers.get("Location");
       if (!location) { // intestazione non esposta: caricamento in un'unica richiesta
-        resolve(await uploadSmall(file, file.name || `foto_${Date.now()}.jpg`, parent)); onProgress(1); return;
+        resolve(await uploadSmall(file, file.name || `photo_${Date.now()}.jpg`, parent)); onProgress(1); return;
       }
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", location);
       xhr.upload.onprogress = e => e.lengthComputable && onProgress(e.loaded / e.total);
-      xhr.onload = () => xhr.status < 300 ? resolve(JSON.parse(xhr.responseText || "{}")) : reject(new Error("caricamento: HTTP " + xhr.status));
-      xhr.onerror = () => reject(new Error("rete non disponibile"));
+      xhr.onload = () => xhr.status < 300 ? resolve(JSON.parse(xhr.responseText || "{}")) : reject(new Error("upload: HTTP " + xhr.status));
+      xhr.onerror = () => reject(new Error("network unavailable"));
       xhr.send(file);
     } catch(e) { reject(e); }
   });
+}
+
+/* ============================================================= visualizzazione dettaglio */
+function loadDetailImage(it, img, spin){
+  // Cropped cards (k) and original/preview media (p/o) are uploaded independently.
+  // An already published crop is usable even when the full-resolution file has
+  // not reached Drive. Original media still takes priority once available.
+  const big = it.p || (it.mt === "video" ? "" : it.o);
+  let cropped = "";
+  const status = message => { if (spin?.isConnected) spin.textContent = message; };
+  const show = (url, full=false) => {
+    if (!img.isConnected || !url || (!full && img.dataset.big)) return;
+    if (full) img.dataset.big = "1";
+    img.onload = () => { if (img.isConnected && spin?.isConnected) spin.remove(); };
+    img.onerror = () => {
+      if (full) {
+        // A bad remote preview must not hide a valid cropped thumbnail.
+        delete img.dataset.big;
+        if (cropped) { show(cropped); return; }
+      }
+      status(big ? "Remote image unavailable — try Refresh" : "Waiting for desktop to publish preview to Drive");
+    };
+    img.src = url;
+  };
+  thumbUrl(it).then(url => {
+    if (!url) { if (!big) status("Waiting for desktop to publish preview to Drive"); return; }
+    if (!img.isConnected) {
+      if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      return;
+    }
+    detailUrls.push(url);
+    cropped = url;
+    if (!img.dataset.big) show(url);
+  }).catch(() => { if (!big) status("Preview download failed — try Refresh"); });
+  if (big) {
+    media(big).then(buf => {
+      const url = URL.createObjectURL(new Blob([buf]));
+      if (!img.isConnected) { URL.revokeObjectURL(url); return; }
+      detailUrls.push(url);
+      show(url, true);
+    }).catch(err => {
+      // If the original is temporarily unavailable, keep the usable crop.
+      if (!cropped && !img.getAttribute("src"))
+        status(err instanceof AuthNeeded ? "session expired" : "preview unavailable");
+    });
+  }
 }
 
 /* ============================================================= miniature a pacchetti */
@@ -428,7 +560,7 @@ async function pack(no){
   // Chiave = ID del file su Drive (non il numero): quando il PC rifà le miniature i numeri ripartono,
   // ma i file sono nuovi; con il numero il telefono mostrava le miniature vecchie fino al riavvio.
   const id = S.index.packs[String(no)];
-  if (!id) throw new Error("pacchetto non nell'indice");
+  if (!id) throw new Error("bundle not listed in the index");
   if (S.packs.has(id)) return S.packs.get(id);
   if (S.packWait.has(id)) return S.packWait.get(id);
   const p = (async () => {
@@ -446,11 +578,87 @@ async function pack(no){
   p.catch(() => S.packWait.delete(id));
   return p;
 }
+// Cropped pack is authoritative. A missing pack is temporary: preserve an
+// image tile, but never display the entire standing figure as its portrait cover.
+function portraitFallback(it){
+  const c = String(it?.c || "");
+  const s = String(it?.s || "").toLowerCase();
+  return ["Human","Humanoid","Undead","Creature","Robot","Alien","Fashion","Group"].includes(c) ||
+    ["umano","creatura","robot"].includes(s);
+}
+async function fallbackThumb(it){
+  if (!it || it.mt === "video") return "";
+  const id = it.p || it.o;
+  if (!id) return "";
+  const input = URL.createObjectURL(new Blob([await media(id)]));
+  if (!portraitFallback(it)) return input;
+  try {
+    // Temporary no-model head-and-shoulders crop until the PC repackages its
+    // authoritative face-aware 4:5 gallery cards. Does not touch the original.
+    const original = new Image();
+    await new Promise((resolve, reject) => {
+      original.onload = resolve; original.onerror = reject; original.src = input;
+    });
+    const w = original.naturalWidth, h = original.naturalHeight;
+    if (!(w > 0 && h > 0)) throw new Error("unreadable preview");
+    const cv = document.createElement("canvas"); cv.width = 320; cv.height = 400;
+    const ctx = cv.getContext("2d"); if (!ctx) throw new Error("canvas unavailable");
+    // Upper-body crop for common centered studio/full-body compositions.
+    const ch = Math.min(h, w / 0.8, Math.max(w * 0.68, h * 0.46));
+    const cw = Math.min(w, ch * 0.8);
+    const sy = Math.min(Math.max(0, h - ch), h * 0.04);
+    const sx = Math.max(0, (w - cw) / 2);
+    ctx.drawImage(original, sx, sy, cw, ch, 0, 0, 320, 400);
+    const blob = await new Promise(resolve => cv.toBlob(resolve, "image/jpeg", 0.84));
+    if (!blob) throw new Error("crop encoding unavailable");
+    URL.revokeObjectURL(input);
+    return URL.createObjectURL(blob);
+  } catch (_) {
+    // Failed decoding must not make the photo disappear again.
+    return input;
+  }
+}
 async function thumbUrl(it){
-  if (!it?.k) return "";
+  if (!it?.k) return fallbackThumb(it);
   const [no, off, len] = it.k;
-  const buf = await pack(no);
-  return URL.createObjectURL(new Blob([buf.slice(off, off + len)], {type: "image/jpeg"}));
+  try {
+    const buf = await pack(no);
+    if (!Number.isSafeInteger(off) || !Number.isSafeInteger(len) || off < 0 || len < 4 || off + len > buf.byteLength) {
+      // A partial/corrupt pack should not be served repeatedly from the persistent cache.
+      const id = S.index.packs[String(no)];
+      if (id) {
+        S.packs.delete(id);
+        await (await caches.open("cv-packs")).delete(`https://cv.local/pack/${id}`);
+      }
+      throw new Error("invalid thumbnail pack");
+    }
+    return URL.createObjectURL(new Blob([buf.slice(off, off + len)], {type: "image/jpeg"}));
+  } catch(err) {
+    const preview = await fallbackThumb(it).catch(() => "");
+    if (preview) return preview;
+    throw err;
+  }
+}
+async function setThumb(img, src){
+  if (!src || !img.isConnected || !img.dataset.loaded) {
+    if (src?.startsWith("blob:")) URL.revokeObjectURL(src);
+    if (!src && img.isConnected) delete img.dataset.loaded;
+    return;
+  }
+  img.onload = () => { img.classList.add("ok"); delete img.dataset.tries; };
+  img.onerror = () => {
+    const old = img.getAttribute("src") || "";
+    img.removeAttribute("src"); img.classList.remove("ok");
+    if (old.startsWith("blob:")) URL.revokeObjectURL(old);
+    // A fetched pack can contain undecodable bytes; fall back to the source preview.
+    if (!img.dataset.fallback && S.byId.get(img.dataset.id)?.k) {
+      img.dataset.fallback = "1";
+      fallbackThumb(S.byId.get(img.dataset.id)).then(url => {
+        if (url) setThumb(img, url); else thumbFailed(img, new Error("preview not available"));
+      }).catch(err => thumbFailed(img, err));
+    } else thumbFailed(img, new Error("image decoding failed"));
+  };
+  img.src = src;
 }
 const io = new IntersectionObserver(entries => {
   for (const en of entries) {
@@ -458,16 +666,20 @@ const io = new IntersectionObserver(entries => {
     if (en.isIntersecting) {
       if (img.dataset.loaded) continue;
       img.dataset.loaded = "1";
-      thumbUrl(S.byId.get(img.dataset.id)).then(url => { if (url && img.dataset.loaded) { img.src = url; img.onload = () => img.classList.add("ok"); } })
+      thumbUrl((()=>{const item=S.byId.get(img.dataset.id);
+        const sub=img.dataset.uSubject&&S.subjectById?.get(img.dataset.uSubject);
+        return sub?.sk?{...item,k:sub.sk}:item;})()).then(url => setThumb(img, url))
         .catch(err => thumbFailed(img, err));
-    } else if (img.dataset.loaded && img.src) {
-      URL.revokeObjectURL(img.src); img.removeAttribute("src"); img.classList.remove("ok"); delete img.dataset.loaded;
+    } else if (img.dataset.loaded) {
+      const old = img.getAttribute("src") || "";
+      if (old.startsWith("blob:")) URL.revokeObjectURL(old);
+      img.removeAttribute("src"); img.classList.remove("ok");
+      delete img.dataset.loaded; delete img.dataset.fallback;
     }
   }
 }, {rootMargin: "600px 0px"});
 
-// Miniatura non scaricata (rete, sessione scaduta, pacchetto sostituito dal PC): si ritenta invece di
-// lasciare la casella vuota per sempre. Un pacchetto sparito da Drive vuol dire indice vecchio: lo si ricarica.
+// Retry failed pack requests; refresh the index when the desktop replaced a bundle.
 let lastIndexReload = 0;
 function thumbFailed(img, err){
   delete img.dataset.loaded;
@@ -479,7 +691,7 @@ function thumbFailed(img, err){
     loadIndex(true).then(() => renderListOnly()).catch(() => {});
     return;
   }
-  if (err instanceof AuthNeeded || tries > 4) return;   // dopo «Riconnetti» la pagina si ridisegna
+  if (err instanceof AuthNeeded || tries > 4) return;
   setTimeout(() => { if (img.isConnected) { io.unobserve(img); io.observe(img); } }, 1500 * tries);
 }
 
@@ -502,50 +714,52 @@ function filtered(base){
   const sort = f.sort || "new";
   if (sort === "old") list = list.slice().reverse();
   else if (sort === "rating") list = list.slice().sort((a, b) => (b.r || 0) - (a.r || 0) || (b.fav - a.fav));
-  else if (sort === "title") list = list.slice().sort((a, b) => (a.t || a.f).localeCompare(b.t || b.f, "it"));
+  else if (sort === "title") list = list.slice().sort((a, b) => (a.t || a.f).localeCompare(b.t || b.f, "en"));
   return list;
 }
 function activeFilterChips(){
   const f = S.filters, out = [];
-  if (f.fav) out.push(["fav", "♥ Preferite"]);
+  if (f.fav) out.push(["fav", "♥ Favorites"]);
   if (f.minr) out.push(["minr", "★ " + f.minr + "+"]);
-  if (f.cat) out.push(["cat", f.cat]); if (f.subj) out.push(["subj", f.subj]); if (f.style) out.push(["style", f.style]);
-  if (f.rating) out.push(["rating", f.rating]); if (f.pending) out.push(["pending", "Da analizzare"]);
+  if (f.cat) out.push(["cat", displayLabel(f.cat)]); if (f.subj) out.push(["subj", displayLabel(f.subj)]); if (f.style) out.push(["style", displayLabel(f.style)]);
+  if (f.rating) out.push(["rating", f.rating]); if (f.pending) out.push(["pending", "To analyze"]);
   return out;
 }
 
 /* ============================================================= interfaccia */
 function headerHtml(title){
   const idx = S.index;
-  const sub = idx ? `${idx.images.length.toLocaleString("it-IT")} immagini · aggiornato ${new Date(idx.generated).toLocaleString("it-IT", {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"})} da ${esc(idx.machine)}` : "";
+  const sub = idx ? `${idx.images.length.toLocaleString("en-US")} images · updated ${new Date(idx.generated).toLocaleString("en-US", {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"})} by ${esc(idx.machine)}` : "";
   const nf = activeFilterChips().length;
   return `<header class="top">
     <div class="brand"><img src="icon-192.png" alt=""><h1>${esc(title)}<small>${sub}</small></h1>
-      <button class="icon-btn" id="refresh" aria-label="Aggiorna">${ico("refresh")}</button></div>
-    <div class="searchrow"><label class="search">${ico("search")}<input id="q" type="search" placeholder="Cerca: tag, nomi, colori, -escludi…" value="${esc(S.query)}"></label>
-      <button class="icon-btn ${nf ? "on" : ""}" id="filters" aria-label="Filtri">${ico("filter")}</button></div>
+      <button class="icon-btn" id="refresh" aria-label="Refresh">${ico("refresh")}</button></div>
+    <div class="searchrow"><label class="search">${ico("search")}<input id="q" type="search" placeholder="Search: tags, names, colors, -exclude…" value="${esc(S.query)}"></label>
+      <button class="icon-btn ${nf ? "on" : ""}" id="filters" aria-label="Filters">${ico("filter")}</button></div>
     <div class="chips" id="chips">${activeFilterChips().map(([k, l]) => `<button class="chip on x" data-clear="${k}">${esc(l)}</button>`).join("")}</div>
   </header>`;
 }
 function tabsHtml(){
   const v = S.view;
   const b = (id, label, icon, on) => `<button data-tab="${id}" class="${on ? "on" : ""}">${ico(icon)}<span>${label}</span></button>`;
-  return `<nav class="tabs">${b("gallery", "Galleria", "grid", v === "gallery")}${b("people", "Personaggi", "users", v === "people" || v === "person")}
-    <button data-tab="add" class="add"><span class="ic">${ico("plus")}</span><span>Aggiungi</span></button>
-    ${b("catalog", "Catalogo", "layers", v === "catalog" || v === "thing")}${b("settings", "Impostazioni", "cog", v === "settings")}</nav>`;
+  return `<nav class="tabs">${b("gallery", "Gallery", "grid", v === "gallery")}${b("people", "Characters", "users", v === "people" || v === "person")}
+    <button data-tab="add" class="add"><span class="ic">${ico("plus")}</span><span>Add</span></button>
+    ${b("catalog", "Catalog", "layers", v === "catalog" || v === "thing")}${b("stats", "Stats", "search", v === "stats")}${b("settings", "Settings", "cog", v === "settings")}</nav>`;
 }
 function render(){
   const app = $("#app");
   if (!clientId() || !localStorage.getItem("cv_logged")) { app.innerHTML = loginHtml(); bindLogin(); return; }
-  if (!S.index) { app.innerHTML = `<div class="login"><img src="icon-192.png" alt=""><h1>Character Vault</h1><p id="msg">Caricamento dell'archivio…</p></div>`; return; }
+  if (!S.index) { app.innerHTML = `<div class="login"><img src="icon-192.png" alt=""><h1>Character Vault</h1><p id="msg">Loading archive…</p></div>`; return; }
   const route = parseRoute();
   S.view = route.view;
+  if (route.view === "stats") return renderUltimateStats();
   if (route.view === "people") return renderPeople(route.arg || "donna");
   if (route.view === "person") return renderPerson(route.arg);
   if (route.view === "catalog") return renderCatalog(route.arg || "luogo");
   if (route.view === "thing") return renderThing(route.arg);
   if (route.view === "add") return renderAdd();
   if (route.view === "settings") return renderSettings();
+  if (route.view === "live-log") return renderLiveLog();
   renderGallery();
 }
 function parseRoute(){
@@ -566,7 +780,7 @@ function bindCommon(){
   q.oninput = () => { clearTimeout(t); t = setTimeout(() => { S.query = q.value; if (S.view !== "gallery" && S.view !== "person" && S.view !== "thing") go("#/"); else renderListOnly(); }, 220); };
   $("#filters").onclick = openFilters;
   document.querySelectorAll("[data-clear]").forEach(b => b.onclick = () => { delete S.filters[b.dataset.clear]; save("cv_filters", S.filters); render(); });
-  document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => go({gallery: "#/", people: "#/people", add: "#/add", catalog: "#/catalog", settings: "#/settings"}[b.dataset.tab]));
+  document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => go({gallery: "#/", people: "#/people", add: "#/add", catalog: "#/catalog", stats: "#/stats", settings: "#/settings"}[b.dataset.tab]));
 }
 let currentBase = [], currentTitle = "";
 function renderGallery(){
@@ -578,16 +792,16 @@ function renderGallery(){
 function pendingBanner(){
   const n = S.ops.filter(o => !o.sent).length, m = S.ops.filter(o => o.sent).length;
   if (!n && !m) return "";
-  return `<div class="banner"><span>${n ? `${n} modifiche da inviare` : `${m} modifiche inviate`}: verranno applicate dal PC che ha l'archivio aperto.</span>${n ? `<button class="btn" id="flush">Invia</button>` : ""}</div>`;
+  return `<div class="banner"><span>${n ? `${n} pending edits` : `${m} sent edits`}: they will be applied by the desktop running this archive.</span>${n ? `<button class="btn" id="flush">Send</button>` : ""}</div>`;
 }
 function renderListOnly(){
   const grid = $("#grid"); if (!grid) return;
   io.disconnect();
-  grid.querySelectorAll("img[src]").forEach(i => URL.revokeObjectURL(i.src));
+  grid.querySelectorAll("img[src]").forEach(i => { if (i.src.startsWith("blob:")) URL.revokeObjectURL(i.src); });
   S.list = filtered(currentBase); S.shown = 0; grid.innerHTML = "";
   const st = $("#status");
-  if (st) st.innerHTML = `<span>${S.list.length.toLocaleString("it-IT")} risultati</span><span>${S.query ? "" : (S.filters.sort === "old" ? "meno recenti" : S.filters.sort === "rating" ? "per voto" : S.filters.sort === "title" ? "per titolo" : "più recenti")}</span>`;
-  if (!S.list.length) grid.innerHTML = `<div class="empty" style="grid-column:1/-1">Nessuna immagine.</div>`;
+  if (st) st.innerHTML = `<span>${S.list.length.toLocaleString("en-US")} results</span><span>${S.query ? "" : (S.filters.sort === "old" ? "oldest first" : S.filters.sort === "rating" ? "by rating" : S.filters.sort === "title" ? "by title" : "newest first")}</span>`;
+  if (!S.list.length) grid.innerHTML = `<div class="empty" style="grid-column:1/-1">No images.</div>`;
   more();
   const fl = $("#flush"); if (fl) fl.onclick = async () => { await flushOps(); render(); };
   const sentinel = $("#sentinel");
@@ -599,7 +813,9 @@ function more(){
   for (const it of S.list.slice(S.shown, S.shown + PAGE)) {
     const b = document.createElement("button");
     b.className = "card" + (S.blurExplicit && it.cr === "esplicito" ? " blur" : "");
-    b.innerHTML = `${it.k ? "" : `<div class="ph">${esc(it.t || it.f)}</div>`}<img alt="" data-id="${esc(it.i)}">${it.fav ? '<span class="badge">♥</span>' : it.r ? `<span class="badge">★${it.r}</span>` : ""}`;
+    b.setAttribute("aria-label", it.t || it.f || "Image");
+    // Names belong to the details screen. A gallery tile contains only the crop.
+    b.innerHTML = `${it.mt === "video" ? '<span class="badge">▶ Video</span>' : ""}<img alt="" data-id="${esc(it.i)}">${it.fav ? '<span class="badge">♥</span>' : it.r ? `<span class="badge">★${it.r}</span>` : ""}`;
     b.onclick = () => openDetail(it.i, S.list);
     frag.appendChild(b);
     io.observe(b.querySelector("img"));
@@ -608,7 +824,330 @@ function more(){
   grid.appendChild(frag);
 }
 
-/* ----------------------------------------------------------- personaggi e catalogo */
+
+/* ============================================================= V7 subject analytics */
+const VFIELDS = [["hair_color","Hair color"],["eye_color","Eye color"],
+  ["hair_length","Hair length"],["hair_style","Hairstyle"],
+  ["expression","Expression"],["age_range","Apparent age"],
+  ["apparent_gender","Presentation"],["body","Body / build"],
+  ["gaze","Gaze"],["setting","Setting"],
+  ["time_of_day","Time of day"],["clothing","Clothing"]];
+function v7Match(subject, criteria, logic){
+  const selected = Object.entries(criteria).filter(([key,value]) => key !== "logic" && value);
+  if (!selected.length) return true;
+  const tests = selected.map(([key,value]) => {
+    const actual = norm(subject.attributes?.[key] || "").trim();
+    const requested = norm(value).trim();
+    if (!actual || actual === "unknown") return false;
+    return ["hair_color","eye_color"].includes(key) ? actual === requested : actual.includes(requested);
+  });
+  return logic === "OR" ? tests.some(Boolean) : tests.every(Boolean);
+}
+function v7Matches(){
+  const f = S.statsFilters || {};
+  return (S.index.subjects || []).filter(s => v7Match(s, f, f.logic || "AND"));
+}
+function renderStats(){
+  const all = S.index.subjects || [], stats = S.index.analytics || {}, f = S.statsFilters || {};
+  const count = v7Matches();
+  const select = ([key,name]) => {
+    const vals = (stats.fields?.[key] || {});
+    const known = Object.keys(vals).filter(v => v && v !== "Unknown").sort((a,b)=>(vals[b]||0)-(vals[a]||0));
+    if (f[key] && !known.includes(f[key])) known.unshift(f[key]);
+    return `<label>${esc(name)}</label><select data-v7-field="${esc(key)}"><option value="">Any</option>${known.map(v=>`<option value="${esc(v)}" ${f[key]===v?'selected':''}>${esc(v)} (${vals[v]||0})</option>`).join("")}</select>`;
+  };
+  mountPage(`<div class="section-title"><h2>Visual Intelligence</h2></div>
+    <div class="panel"><div class="row"><b>${all.length.toLocaleString('en-US')} subjects</b><span class="muted">· ${Number(stats.analyzed_images||0)} indexed assets · ${count.length} matches</span></div>
+    <p class="muted">All attributes must belong to the same subject. Unknown does not match. Desktop publishes the analysis with the gallery index.</p>
+    <div class="filters">${VFIELDS.map(select).join('')}</div>
+    <label class="muted">Combination logic</label><select id="v7logic"><option value="AND" ${f.logic!=='OR'?'selected':''}>Match all (AND)</option><option value="OR" ${f.logic==='OR'?'selected':''}>Match any (OR)</option></select>
+    <div class="row"><button class="btn" id="v7reset">Reset filters</button><button class="btn primary" id="v7save">Save filters</button></div></div>
+    <div class="section-title"><h2>Matching subjects · ${count.length}</h2></div>
+    <div class="grid" id="v7results" style="row-gap:28px"></div>
+    <div class="panel"><h4>Attribute distribution</h4><div id="v7distribution"></div></div>`, 'Statistics');
+  const renderResults = () => {
+    const matched=v7Matches(), host=$('#v7results');
+    host.innerHTML='';
+    for (const sub of matched.slice(0,360)) {
+      const it=S.byId.get(sub.image_id);
+      if (!it) continue;
+      const card=document.createElement('div');
+      card.style.minWidth='0';
+      const name=sub.label || `Subject ${sub.position}`;
+      card.innerHTML=`<button class="card" style="width:100%" aria-label="${esc(name)}"><img alt="" data-id="${esc(it.i)}"></button><span style="font-size:11px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(name)}</span>`;
+      card.querySelector('button').onclick=()=>openDetail(it.i, S.index.images);
+      host.appendChild(card);
+      io.observe(card.querySelector('img'));
+    }
+    if (!host.children.length) host.innerHTML='<div class="empty" style="grid-column:1/-1">No subject matches the selected attributes.</div>';
+    if (matched.length>360) host.insertAdjacentHTML('afterend',`<p class="muted">First 360 of ${matched.length} matching subjects displayed.</p>`);
+    const key = f.hair_color ? 'eye_color' : 'hair_color';
+    const counter = {};
+    matched.forEach(s=>{const v=s.attributes?.[key]||'Unknown';counter[v]=(counter[v]||0)+1;});
+    $('#v7distribution').innerHTML=Object.entries(counter).sort((a,b)=>b[1]-a[1]).slice(0,10)
+      .map(([v,n])=>`<div class="up"><span style="flex:1">${esc(v)}</span><b>${n}</b></div>`).join('') || '<p class="muted">No results</p>';
+  };
+  document.querySelectorAll('[data-v7-field]').forEach(sel=>sel.onchange=()=>{
+    if(sel.value) f[sel.dataset.v7Field]=sel.value;
+    else delete f[sel.dataset.v7Field];
+    S.statsFilters=f;save('cv_v7_stats_filters',f);renderStats();
+  });
+  $('#v7logic').onchange=e=>{f.logic=e.target.value;save('cv_v7_stats_filters',f);renderStats();};
+  $('#v7reset').onclick=()=>{S.statsFilters={logic:'AND'};save('cv_v7_stats_filters',S.statsFilters);renderStats();};
+  $('#v7save').onclick=()=>{save('cv_v7_stats_filters',S.statsFilters);toast('Subject search filters saved on this device.');};
+  renderResults();
+}
+
+
+/* ====================================================== V7 Ultimate discovery */
+const ULTIMATE_TABS=[['search','Discover'],['lab','Statistics'],['collections','Collections'],
+  ['world','World Atlas'],['quality','Archive Health'],['video','Video']];
+function ultimateNaturalQuery(query){
+  const q=norm(query || ''),out={};
+  const c={black:['black','nero','nera','neri'],green:['green','verde','verdi'],
+    blue:['blue','blu','azzurro'],brown:['brown','marrone','castano'],
+    red:['red','rosso','rossa'],blonde:['blonde','blond','biondo','bionda'],
+    white:['white','bianco','bianca'],gray:['gray','grey','grigio'],hazel:['hazel','nocciola']};
+  for(const [field,terms] of [['hair_color',['hair','capelli','haare']],['eye_color',['eyes','eye','occhi','augen']]]){
+    for(const [canonical,colors] of Object.entries(c)){
+      if(terms.some(noun=>colors.some(col=>new RegExp('\\b'+col+'\\b(?:\\s+\\w+){0,2}\\s+'+noun+'\\b|\\b'+noun+'\\b(?:\\s+\\w+){0,2}\\s+'+col+'\\b','i').test(q)))){
+        out[field]=canonical;break;
+      }
+    }
+  }
+  for(const [field,pattern,value] of [['setting',/\b(castle|castello)\b/,'castle'],
+    ['time_of_day',/\b(night|notte|nighttime)\b/,'night'],
+    ['art_style',/\b(gothic|gotico|gotica)\b/,'goth'],
+    ['expression',/\b(smiling|sorridente)\b/,'smil']]) if(pattern.test(q)&&!out[field])out[field]=value;
+  return out;
+}
+function ultimateSimilarity(reference, candidates){
+  const weights={hair_color:4,eye_color:4,hair_length:2,hair_style:2,kind:3,body:2,
+    age_range:1,clothing:2,expression:1,gaze:1,setting:1,art_style:2};
+  return candidates.filter(s=>s.id!==reference.id).map(s=>{
+    let possible=0,matching=0,shared=[];
+    for(const [key,weight] of Object.entries(weights)){
+      const a=norm(reference.attributes?.[key]||''),b=norm(s.attributes?.[key]||'');
+      if(!a||!b)continue;
+      possible+=weight;
+      if(a===b){matching+=weight;shared.push(key)}
+    }
+    return {subject:s,score:possible?matching/possible:0,shared};
+  }).filter(v=>v.score>0).sort((a,b)=>b.score-a.score).slice(0,90);
+}
+function ultimateSubjectCards(matches,host,max=240){
+  host.innerHTML='';
+  for(const sub of matches.slice(0,max)){
+    const im=S.byId.get(sub.image_id);if(!im)continue;
+    const node=document.createElement('div');node.style.minWidth='0';
+    node.innerHTML=`<button class="card" style="width:100%" aria-label="${esc(sub.label)}"><img alt="" data-id="${esc(im.i)}" data-u-subject="${esc(sub.id)}"></button>
+      <div style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(sub.label||'Subject')}</div>
+      <button class="chip" style="font-size:11px;padding:3px 7px;margin-top:3px">Similar</button>`;
+    node.querySelector('.card').onclick=()=>openDetail(im.i,S.index.images);
+    node.querySelector('.chip').onclick=()=>{S.ultimateSimilar=sub.id;S.ultimateTab='search';renderUltimateStats();};
+    host.appendChild(node);io.observe(node.querySelector('img'));
+  }
+  if(!host.children.length)host.innerHTML='<div class="empty" style="grid-column:1/-1">No matching subjects in the synchronized catalog.</div>';
+  if(matches.length>max)host.insertAdjacentHTML('beforeend',`<p class="muted" style="grid-column:1/-1">Showing ${max} of ${matches.length} matching subjects.</p>`);
+}
+function ultimateFacetField(field,label,filters,stats){
+  const vals=Object.entries(stats.fields?.[field]||{}).filter(([v])=>v&&v!=='Unknown').sort((a,b)=>b[1]-a[1]).slice(0,180);
+  if(filters[field]&&!vals.some(([v])=>v===filters[field]))vals.unshift([filters[field],0]);
+  return `<label>${esc(label)}</label><select data-u-field="${esc(field)}"><option value="">Any</option>${vals.map(([v,n])=>`<option value="${esc(v)}" ${filters[field]===v?'selected':''}>${esc(v)} (${n})</option>`).join('')}</select>`;
+}
+
+const VIZ_COLORS=['var(--accent2)','var(--gold)','var(--ai)','var(--ok)','var(--info)','var(--warn)','var(--text3)'];
+const VIZ_FIELDS=[['hair_color','Hair color'],['eye_color','Eye color'],['hair_length','Hair length'],
+  ['hair_style','Hairstyle'],['age_range','Apparent age'],['expression','Expression'],['body','Build'],
+  ['clothing','Clothing'],['setting','Environment'],['lighting','Lighting'],['art_style','Visual style'],
+  ['gaze','Gaze direction'],['pose','Pose']];
+function vizKnown(x){const s=String(x??'').trim();return /^(unknown|none|null|n\/d|sconosciuto|not determined)$/i.test(s)?'':s;}
+function vizDistribution(subjects,field){
+  const counts=new Map();let unknown=0;
+  subjects.forEach(s=>{const v=vizKnown(s.attributes?.[field]);if(!v){unknown++;return;}counts.set(v,(counts.get(v)||0)+1);});
+  return {items:[...counts].sort((a,b)=>b[1]-a[1]),known:subjects.length-unknown,unknown,total:subjects.length};
+}
+function vizEnglish(value, field){
+  const raw=String(value??'').trim();
+  const k=raw.toLocaleLowerCase('it-IT');
+  const common={
+    'giorno':'Daytime','notte':'Night','mattina':'Morning','pomeriggio':'Afternoon',
+    'sera':'Evening','luce artificiale':'Artificial lighting','luce naturale':'Natural light',
+    'interno':'Indoor','esterno':'Outdoor','sconosciuto':'Unknown',
+    'giovane adulto':'Young adult','giovane adulta':'Young adult','adulto':'Adult',
+    'adulta':'Adult','anziano':'Older adult','anziana':'Older adult',
+    'donna':'Woman','uomo':'Man','in piedi':'Standing',
+    'castano scuro':'Dark brown','castano molto scuro':'Very dark brown',
+    'castano chiaro':'Light brown','castano':'Brown','nero':'Black',
+    'neri':'Black','bianco':'White','grigio':'Gray','verde':'Green',
+    'azzurro':'Light blue','marrone':'Brown','biondo':'Blonde',
+    'bionda':'Blonde','molto lunghi, fino alla vita':'Waist length',
+    'corti':'Short','lunghi':'Long','ondulati':'Wavy'
+  };
+  if(Object.prototype.hasOwnProperty.call(common,k))return common[k];
+  // Preserve unrecognized detailed descriptions rather than fabricate a translation.
+  return raw;
+}
+function vizDonut(items){
+  const top=items.filter(v=>v[1]>0).slice(0,7),total=top.reduce((a,b)=>a+b[1],0),den=Math.max(1,total);
+  let cursor=0;const arcs=[];top.forEach((v,i)=>{const end=cursor+100*v[1]/den;arcs.push(`${VIZ_COLORS[i%VIZ_COLORS.length]} ${cursor}% ${end}%`);cursor=end;});
+  const bg=arcs.length?`conic-gradient(${arcs.join(',')})`:'var(--bg4)';
+  return `<div class="viz-donut" style="background:${bg}"><div class="center"><strong>${total}</strong><small class="muted">top groups</small></div></div>
+  <div class="viz-legend">${top.map(([name,n],i)=>`<span><i style="background:${VIZ_COLORS[i%VIZ_COLORS.length]}"></i>${esc(vizEnglish(name))} (${n})</span>`).join('')}</div>`;
+}
+function vizBars(items,den,field,interactive=true){
+  const peak=Math.max(1,...items.map(x=>x[1]));
+  return items.length?items.slice(0,9).map(([value,n],i)=>`<button class="viz-bar" ${interactive?`data-viz-field="${esc(field)}" data-viz-value="${esc(value)}"`:'disabled'}>
+      <span style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(vizEnglish(value,field))}</span>
+      <span class="viz-track"><span class="viz-fill" style="width:${Math.max(1,100*n/peak).toFixed(1)}%"></span></span>
+      <b>${n}</b></button>`).join(''):'<p class="muted">No known values indexed yet.</p>';
+}
+function vizTimeline(rows){
+  const history=(rows||[]).slice(-90).filter(r=>Number.isFinite(Number(r.images))&&Number.isFinite(Number(r.subjects)));
+  if(!history.length)return '<p class="muted">Index snapshots will appear after a refresh.</p>';
+  const max=Math.max(1,...history.map(r=>Math.max(Number(r.images),Number(r.subjects))));
+  const pts=key=>history.map((r,i)=>`${(10+i*280/Math.max(1,history.length-1)).toFixed(2)},${(120-108*Number(r[key])/max).toFixed(2)}`).join(' ');
+  return `<svg class="viz-timeline" viewBox="0 0 300 142" role="img" aria-label="Historical subject and image index counts">
+    <path d="M10 12V120H292" stroke="var(--border2)" stroke-width="1" fill="none"/>
+    <path d="M10 66H292" stroke="var(--border)" stroke-width="1" fill="none"/>
+    <polyline points="${pts('images')}" stroke="var(--accent2)" stroke-width="2" fill="none"/>
+    <polyline points="${pts('subjects')}" stroke="var(--info)" stroke-width="2" fill="none"/>
+    <text x="11" y="138" fill="var(--text3)" font-size="9">${esc(String(history[0].date||'').slice(0,10))}</text>
+    <text x="291" y="138" text-anchor="end" fill="var(--text3)" font-size="9">${esc(String(history.at(-1).date||'').slice(0,10))}</text></svg>
+    <div class="viz-legend"><span style="color:var(--accent2)">● Images</span><span style="color:var(--info)">● Subjects</span></div>`;
+}
+function vizMatrix(subjects){
+  const a=new Map(),b=new Map(),both=new Map();
+  subjects.forEach(s=>{const x=vizKnown(s.attributes?.hair_color),y=vizKnown(s.attributes?.eye_color);
+    if(!x||!y)return;a.set(x,(a.get(x)||0)+1);b.set(y,(b.get(y)||0)+1);
+    const k=JSON.stringify([x,y]);both.set(k,(both.get(k)||0)+1);
+  });
+  const xs=[...a].sort((x,y)=>y[1]-x[1]).slice(0,5).map(x=>x[0]),ys=[...b].sort((x,y)=>y[1]-x[1]).slice(0,5).map(x=>x[0]);
+  if(!xs.length||!ys.length)return '<p class="muted">No verified hair + eye color intersections yet.</p>';
+  const peak=Math.max(1,...both.values());
+  const head=`<span></span>${ys.map(y=>`<span class="viz-head">${esc(vizEnglish(y,"eye_color"))}</span>`).join('')}`;
+  const rows=xs.map(x=>`<span class="viz-row-head">${esc(vizEnglish(x,"hair_color"))}</span>${ys.map(y=>{
+    const n=both.get(JSON.stringify([x,y]))||0;
+    return `<button type="button" ${n?`data-viz-hair="${esc(x)}" data-viz-eyes="${esc(y)}"`: 'disabled'}
+      style="background:rgba(196,54,79,${(n?0.15+0.75*n/peak:0.07).toFixed(2)});color:var(--text)" title="${esc(vizEnglish(x,"hair_color"))} hair + ${esc(vizEnglish(y,"eye_color"))} eyes: ${n} subjects">${n}</button>`;
+  }).join('')}`).join('');
+  return `<div class="viz-matrix" style="grid-template-columns:74px repeat(${ys.length},minmax(40px,1fr))">${head}${rows}</div>`;
+}
+
+function renderUltimateStats(){
+  const all=S.index.subjects||[],stats=S.index.analytics||{},dis=S.index.discovery||{},f=S.statsFilters||{logic:'AND'};
+  const tab=S.ultimateTab||'search';
+  const links=ULTIMATE_TABS.map(([id,label])=>`<button class="chip ${tab===id?'on':''}" data-u-tab="${id}">${esc(label)}</button>`).join('');
+  let body='';
+  if(tab==='search'){
+    const fields=[['hair_color','Hair color'],['eye_color','Eye color'],['hair_length','Hair length'],['hair_style','Hairstyle'],
+      ['age_range','Apparent age'],['expression','Expression'],['gaze','Gaze'],['body','Build'],
+      ['clothing','Clothing'],['art_style','Visual style'],['setting','Environment'],['time_of_day','Time of day'],
+      ['weather','Weather'],['pose','Pose']];
+    let matched=all.filter(s=>v7Match(s,f,f.logic||'AND'));
+    if(S.ultimateSimilar){const ref=all.find(s=>s.id===S.ultimateSimilar);
+      matched=ref?ultimateSimilarity(ref,all).map(v=>v.subject):matched;}
+    body=`<div class="panel"><h4>Find subjects by description</h4>
+      <textarea id="u-natural" placeholder="Black hair, green eyes, gothic style, at night..." style="min-height:56px">${esc(S.ultimateQuery||'')}</textarea>
+      <div class="row"><button class="btn primary" id="u-interpret">Interpret and filter</button><button class="btn" id="u-clear">Clear</button></div>
+      <p class="muted">Offline, rule-based query interpretation. Check the resulting filters before searching.</p></div>
+      <div class="panel"><h4>Combine attributes</h4><div class="filters">${fields.map(([k,l])=>ultimateFacetField(k,l,f,stats)).join('')}</div>
+      <label>Match logic</label><select id="u-logic"><option value="AND" ${f.logic!=='OR'?'selected':''}>All conditions (AND)</option>
+      <option value="OR" ${f.logic==='OR'?'selected':''}>Any condition (OR)</option></select>
+      <div class="row"><button class="btn" id="u-reset">Reset filters</button><button class="btn primary" id="u-save">Save smart collection</button></div></div>
+      <div class="section-title"><h2>${S.ultimateSimilar?'Visually descriptive matches':'Matching subjects'} · ${matched.length}</h2></div>
+      ${S.ultimateSimilar?'<div class="banner"><span>Similarity is based on catalog attributes, not identity recognition.</span><button class="btn" id="u-exit-sim">Exit</button></div>':''}
+      <div class="grid" id="u-matches" style="row-gap:25px"></div>`;
+  }else if(tab==='lab'){
+    const field=S.vizField||'hair_color',d=vizDistribution(all,field),
+      coverage=Object.entries(stats.coverage||{}).sort((a,b)=>b[1]-a[1]),
+      crosses=dis.combinations||[], hair=vizDistribution(all,'hair_color'),eyes=vizDistribution(all,'eye_color');
+    const both=all.filter(x=>vizKnown(x.attributes?.hair_color)&&vizKnown(x.attributes?.eye_color)).length;
+    const mediaPending=Number.isFinite(Number(S.index.media_pending)) ? Number(S.index.media_pending)
+      : (S.index.images||[]).filter(x=>x.mt!=="video"&&!x.p&&!x.o).length;
+    body=`${mediaPending>0?`<div class="banner"><span>${mediaPending} images are indexed but their original or preview has not yet been uploaded from the desktop to Drive. They will become available after the next completed archive media sync.</span></div>`:''}<div class="viz-kpis">
+      <div class="viz-kpi"><strong>${all.length.toLocaleString()}</strong><span>Subjects indexed</span></div>
+      <div class="viz-kpi"><strong>${Number(stats.analyzed_images||0).toLocaleString()}</strong><span>Images indexed</span></div>
+      <div class="viz-kpi"><strong>${(100*both/Math.max(1,all.length)).toFixed(1)}%</strong><span>Hair + eyes coverage</span></div>
+      <div class="viz-kpi"><strong>${Number(stats.manual_corrections||0)}</strong><span>Manual corrections</span></div></div>
+      <div class="panel"><div class="row"><h4 style="flex:1">Visual attribute analysis</h4><select id="u-viz-field" style="max-width:210px">
+        ${VIZ_FIELDS.map(([k,l])=>`<option value="${k}" ${k===field?'selected':''}>${esc(l)}</option>`).join('')}</select></div>
+        <p class="viz-sub">${d.known} known · ${d.unknown} unknown · ${(100*d.known/Math.max(1,d.total)).toFixed(1)}% coverage. Tap a bar to filter the gallery.</p>
+        <div class="viz-grid"><div><h4>Attribute histogram</h4>${vizBars(d.items,d.known,field)}</div>
+        <div><h4>Distribution</h4>${vizDonut(d.items)}</div></div></div>
+      <div class="panel"><h4>Hair × Eye color · same subject</h4><p class="viz-sub">Tap a nonzero intersection to find the corresponding subjects.</p>${vizMatrix(all)}</div>
+      <div class="panel"><h4>Metadata coverage by attribute</h4>
+        <p class="viz-sub">Only analyzed fields have meaningful coverage. Empty fields are not negative findings.</p>
+        ${coverage.filter(([k,v])=>Number(v)>0).slice(0,18).map(([k,v])=>`<div class="up"><span style="flex:1;font-size:12px">${esc(k.replaceAll('_',' '))}</span>
+        <progress value="${Math.max(0,Math.min(100,Number(v)||0))}" max="100" style="width:95px"></progress><b>${Number(v).toFixed(1)}%</b></div>`).join('')||'<p class="muted">No attributes analyzed yet.</p>'}
+        <p class="muted">${coverage.filter(([k,v])=>!(Number(v)>0)).length} additional fields not collected yet; no data has been inferred for them.</p></div>
+      <div class="panel"><h4>Index evolution</h4><p class="viz-sub">Actual index snapshots, not cumulative image imports.</p>${vizTimeline(stats.history||[])}</div>
+      <div class="panel"><h4>Cross-attribute combinations</h4><p class="viz-sub">Tap a combination to open the matching subjects.</p>
+      ${crosses.slice(0,30).map((c,i)=>`<button class="up" style="background:none;width:100%;text-align:left;color:inherit;border:0" data-u-cross="${i}"><span style="flex:1">${esc(vizEnglish(c.av,c.a))} ${esc(c.a.replaceAll("_"," "))} + ${esc(vizEnglish(c.bv,c.b))} ${esc(c.b.replaceAll("_"," "))}</span><b>${c.n}</b></button>`).join('')||'<p class="muted">No combinations analyzed yet.</p>'}</div>`;
+  }else if(tab==='collections'){
+    const cols=dis.collections||[];
+    body=`<div class="panel"><h4>Smart collections · ${cols.length}</h4><p class="muted">Rules are evaluated on each published archive revision.</p>
+      ${cols.map((c,i)=>`<button class="up" style="background:none;width:100%;text-align:left;border:0;color:inherit" data-u-col="${i}"><span style="flex:1">${esc(c.name)}</span><b>${c.count} subjects</b></button>`).join('')||'<p class="muted">Create your first collection from Discover and synchronize with the desktop.</p>'}</div>`;
+  }else if(tab==='world'){
+    const world=dis.atlas||{};
+    body=`<div class="panel"><h4>Co-appearances</h4><p class="muted">Appearances in the same source image, not asserted personal relationships.</p>
+      ${(world.coappearances||[]).slice(0,100).map(p=>`<div class="up"><span style="flex:1">${esc(p.a)} · ${esc(p.b)}</span><b>${p.n}</b></div>`).join('')||'<p class="muted">No co-appearances.</p>'}</div>
+      <div class="panel"><h4>Scene locations</h4>${(world.places||[]).slice(0,80).map(p=>`<div class="up"><span style="flex:1">${esc(p.name)}</span><b>${p.subjects}</b></div>`).join('')}</div>`;
+  }else if(tab==='quality'){
+    const h=dis.quality||{};
+    body=`<div class="panel"><h4>Archive Health</h4><div style="font-size:32px;font-weight:600">${Number(h.completeness||0).toFixed(1)}%</div>
+      <p class="muted">Metadata completeness across the principal observable fields; not an appearance score.</p>
+      <div class="row"><b>${(h.needs_review||[]).length} flagged records</b><span class="muted">· ${h.manual_corrections||0} manual corrections</span></div></div>
+      <div class="panel"><h4>Most frequently missing fields</h4>${Object.entries(h.missing_per_field||{}).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<div class="up"><span style="flex:1">${esc(k.replaceAll('_',' '))}</span><b>${n}</b></div>`).join('')}</div>`;
+  }else if(tab==='video'){
+    const video=dis.video||{};
+    body=`<div class="panel"><h4>Video Intelligence</h4><p class="muted">Sampled keyframes only. They are not continuous character-tracking evidence.</p>
+      ${[...(video.frames||[]),...(video.candidate_scenes||[])].slice(0,150).map(f=>`<button class="up" style="background:none;width:100%;border:0;color:inherit" data-u-video="${esc(f.image_id)}"><span style="flex:1">${esc((S.byId.get(f.image_id)||{}).t||f.image_id)}</span><b>${Number(f.second).toFixed(1)} s</b></button>`).join('')||'<p class="muted">No verified video keyframes synchronized.</p>'}</div>`;
+  }
+  mountPage(`<div class="section-title"><h2>Visual Intelligence Universe</h2></div><div class="chips">${links}</div>${body}`, 'Statistics');
+  document.querySelectorAll('[data-u-tab]').forEach(el=>el.onclick=()=>{S.ultimateTab=el.dataset.uTab;renderUltimateStats();});
+  if(tab==='search'){
+    const host=$('#u-matches');
+    let selected=all.filter(s=>v7Match(s,f,f.logic||'AND'));
+    if(S.ultimateSimilar){const ref=all.find(s=>s.id===S.ultimateSimilar);selected=ref?ultimateSimilarity(ref,all).map(x=>x.subject):selected;}
+    ultimateSubjectCards(selected,host);
+    document.querySelectorAll('[data-u-field]').forEach(el=>el.onchange=()=>{const k=el.dataset.uField;if(el.value)f[k]=el.value;else delete f[k];
+      S.statsFilters=f;save('cv_v7_stats_filters',f);S.ultimateSimilar='';renderUltimateStats();});
+    $('#u-logic').onchange=e=>{f.logic=e.target.value;save('cv_v7_stats_filters',f);S.ultimateSimilar='';renderUltimateStats();};
+    $('#u-reset').onclick=()=>{S.statsFilters={logic:'AND'};S.ultimateSimilar='';save('cv_v7_stats_filters',S.statsFilters);renderUltimateStats();};
+    $('#u-clear').onclick=()=>{S.ultimateQuery='';S.ultimateSimilar='';S.statsFilters={logic:'AND'};save('cv_v7_stats_filters',S.statsFilters);renderUltimateStats();};
+    $('#u-interpret').onclick=()=>{S.ultimateQuery=$('#u-natural').value;
+      const parsed=ultimateNaturalQuery(S.ultimateQuery);if(!Object.keys(parsed).length){toast('No supported attributes found. Use manual filters.');return;}
+      S.statsFilters={logic:/\b(or|oppure)\b/.test(norm(S.ultimateQuery))?'OR':'AND',...parsed};
+      save('cv_v7_stats_filters',S.statsFilters);S.ultimateSimilar='';renderUltimateStats();};
+    $('#u-save').onclick=()=>{const filters=Object.fromEntries(Object.entries(f).filter(([k,v])=>k!=='logic'&&v));
+      if(!Object.keys(filters).length){toast('Choose at least one attribute.');return;}
+      const name=prompt('Smart collection name',Object.entries(filters).map(([k,v])=>v+' '+k.replaceAll('_',' ')).join(' + ').slice(0,65));
+      if(!name||!name.trim())return;
+      const id='sc_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+      queueOp({op:'smart_collection',id,name:name.trim().slice(0,100),filters,logic:f.logic||'AND'});
+      toast('Collection queued for desktop synchronization.');};
+    if($('#u-exit-sim'))$('#u-exit-sim').onclick=()=>{S.ultimateSimilar='';renderUltimateStats();};
+  }
+  if(tab==='lab'){
+    const el=$('#u-viz-field');if(el)el.onchange=()=>{S.vizField=el.value;renderUltimateStats();};
+    document.querySelectorAll('[data-viz-field]').forEach(btn=>btn.onclick=()=>{
+      S.statsFilters={logic:'AND',[btn.dataset.vizField]:btn.dataset.vizValue};
+      save('cv_v7_stats_filters',S.statsFilters);S.ultimateTab='search';renderUltimateStats();
+    });
+    document.querySelectorAll('[data-viz-hair]').forEach(btn=>btn.onclick=()=>{
+      S.statsFilters={logic:'AND',hair_color:btn.dataset.vizHair,eye_color:btn.dataset.vizEyes};
+      save('cv_v7_stats_filters',S.statsFilters);S.ultimateTab='search';renderUltimateStats();
+    });
+  }
+  document.querySelectorAll('[data-u-cross]').forEach(btn=>btn.onclick=()=>{const v=dis.combinations[Number(btn.dataset.uCross)];
+    S.statsFilters={logic:'AND',[v.a]:v.av,[v.b]:v.bv};save('cv_v7_stats_filters',S.statsFilters);S.ultimateTab='search';renderUltimateStats();});
+  document.querySelectorAll('[data-u-col]').forEach(btn=>btn.onclick=()=>{const v=dis.collections[Number(btn.dataset.uCol)];
+    S.statsFilters={logic:v.logic,...v.filters};save('cv_v7_stats_filters',S.statsFilters);S.ultimateTab='search';renderUltimateStats();});
+  document.querySelectorAll('[data-u-video]').forEach(btn=>btn.onclick=()=>{if(S.byId.has(btn.dataset.uVideo))openDetail(btn.dataset.uVideo,S.index.images);});
+}
+
+/* ----------------------------------------------------------- characters e catalogo */
 function coverCard(kind, obj, sub){
   const cover = S.byId.get(obj.cover) || S.index.images.find(it => (kind === "p" ? it.e : it.th)?.includes(obj.id));
   return `<button class="ent" data-open="${kind}:${esc(obj.id)}"><div class="cv"><img alt="" data-id="${esc(cover?.i || "")}"></div><b>${esc(obj.name)}</b><span>${esc(sub)}</span></button>`;
@@ -621,8 +1160,8 @@ function renderPeople(group){
   const q = norm(S.query);
   const list = S.index.entities.filter(e => e.group === group && (!q || norm(e.name).includes(q))).sort((a, b) => b.n - a.n);
   const chips = Object.entries(GROUPS).map(([k, l]) => `<button class="chip ${k === group ? "on" : ""}" data-g="${k}">${l} · ${S.index.entities.filter(e => e.group === k).length}</button>`).join("");
-  mountPage(`<div class="chips" style="padding-top:0">${chips}</div><div class="status"><span>${list.length} personaggi</span></div>
-    <div class="list">${list.map(e => coverCard("p", e, `${e.n} immagini · ${e.type}`)).join("") || '<div class="empty">Nessun personaggio.</div>'}</div>`, "Personaggi");
+  mountPage(`<div class="chips" style="padding-top:0">${chips}</div><div class="status"><span>${list.length} characters</span></div>
+    <div class="list">${list.map(e => coverCard("p", e, `${e.n} images · ${e.type}`)).join("") || '<div class="empty">No characters.</div>'}</div>`, "Characters");
   document.querySelectorAll("[data-g]").forEach(b => b.onclick = () => go(`#/people/${b.dataset.g}`));
   bindCovers();
 }
@@ -632,7 +1171,7 @@ function renderPerson(id){
   mountPage(`<div class="section-title"><button class="icon-btn" onclick="history.back()">${ico("back")}</button><h2>${esc(e.name)}</h2>
       <button class="icon-btn" id="rename">${ico("edit")}</button></div>
     <div class="status" id="status"></div><div class="grid" id="grid"></div><div class="sentinel" id="sentinel"></div>`, e.name);
-  $("#rename").onclick = async () => { const v = prompt("Nome del personaggio", e.name); if (v != null && v.trim() && v.trim() !== e.name) { await queueOp({op: "entity_name", entity: id, value: v.trim()}); toast("Nome inviato al PC"); render(); } };
+  $("#rename").onclick = async () => { const v = prompt("Character name", e.name); if (v != null && v.trim() && v.trim() !== e.name) { await queueOp({op: "entity_name", entity: id, value: v.trim()}); toast("Name sent to the desktop"); render(); } };
   renderListOnly();
 }
 function renderCatalog(domain){
@@ -640,8 +1179,8 @@ function renderCatalog(domain){
   const doms = S.index.domains || {};
   const list = S.index.things.filter(t => t.domain === domain && (!q || norm(t.name + " " + t.kind + " " + t.path).includes(q))).sort((a, b) => b.n - a.n);
   const chips = Object.entries(doms).map(([k, l]) => `<button class="chip ${k === domain ? "on" : ""}" data-d="${k}">${esc(l)} · ${S.index.things.filter(t => t.domain === k).length}</button>`).join("");
-  mountPage(`<div class="chips" style="padding-top:0">${chips}</div><div class="status"><span>${list.length} schede</span></div>
-    <div class="list">${list.map(t => coverCard("t", t, `${t.n} immagini${t.kind ? " · " + t.kind : ""}${t.path ? " · " + t.path : ""}`)).join("") || '<div class="empty">Nessuna scheda.</div>'}</div>`, doms[domain] || "Catalogo");
+  mountPage(`<div class="chips" style="padding-top:0">${chips}</div><div class="status"><span>${list.length} records</span></div>
+    <div class="list">${list.map(t => coverCard("t", t, `${t.n} images${t.kind ? " · " + t.kind : ""}${t.path ? " · " + t.path : ""}`)).join("") || '<div class="empty">No entries.</div>'}</div>`, doms[domain] || "Catalog");
   document.querySelectorAll("[data-d]").forEach(b => b.onclick = () => go(`#/catalog/${b.dataset.d}`));
   bindCovers();
 }
@@ -651,7 +1190,7 @@ function renderThing(id){
   mountPage(`<div class="section-title"><button class="icon-btn" onclick="history.back()">${ico("back")}</button><h2>${esc(t.name)}</h2>
       <button class="icon-btn" id="rename">${ico("edit")}</button></div>${t.path ? `<div class="muted" style="margin:-6px 4px 10px">${esc(t.path)}</div>` : ""}
     <div class="status" id="status"></div><div class="grid" id="grid"></div><div class="sentinel" id="sentinel"></div>`, t.name);
-  $("#rename").onclick = async () => { const v = prompt("Nome", t.name); if (v != null && v.trim() && v.trim() !== t.name) { await queueOp({op: "thing_name", thing: id, value: v.trim()}); toast("Nome inviato al PC"); render(); } };
+  $("#rename").onclick = async () => { const v = prompt("Name", t.name); if (v != null && v.trim() && v.trim() !== t.name) { await queueOp({op: "thing_name", thing: id, value: v.trim()}); toast("Name sent to the desktop"); render(); } };
   renderListOnly();
 }
 
@@ -675,31 +1214,36 @@ function showDetail(){
   detailUrls.forEach(u => URL.revokeObjectURL(u)); detailUrls = [];
   const ents = (it.e || []).map(id => S.entById.get(id)).filter(Boolean);
   const things = (it.th || []).map(id => S.thingById.get(id)).filter(Boolean);
+  const assets = it.va || [];
   const star = n => `<button data-star="${n}" class="${(it.r || 0) >= n ? "on" : ""}">★</button>`;
   d.innerHTML = `<div class="bar"><button class="icon-btn" id="dback">${ico("back")}</button><div class="t">${esc(it.t || it.f)}</div><span class="muted">${detailIdx + 1}/${S.detailList.length}</span></div>
-    <div class="viewer" id="viewer"><img id="dimg" alt=""><div class="spin" id="dspin">anteprima…</div></div>
+    <div class="viewer" id="viewer"><img id="dimg" alt=""><div class="spin" id="dspin">Loading preview…</div></div>
     <div class="info">
       <h3><span id="dtitle">${esc(it.t || it.f)}</span><button class="icon-btn" id="dedit">${ico("edit")}</button></h3>
-      <div class="meta">${[it.w && it.h ? `${it.w}×${it.h}` : "", it.dt.replace("T", " "), [it.c, it.sc].filter(Boolean).join(" › "), it.st, it.cr].filter(Boolean).map(esc).join(" · ")}</div>
+      <div class="meta">${[it.mt === "video" ? `Video · ${Math.round(it.dur || 0)} s · ${it.vc || ""}` : "", it.w && it.h ? `${it.w}×${it.h}` : "", it.dt.replace("T", " "), [it.c, it.sc].filter(Boolean).join(" › "), it.st, it.cr].filter(Boolean).map(displayLabel).map(esc).join(" · ")}</div>
       <div class="row"><button class="fav ${it.fav ? "on" : ""}" id="dfav">${it.fav ? "♥" : "♡"}</button><div class="stars">${[1,2,3,4,5].map(star).join("")}</div></div>
-      ${ents.length ? `<div class="lbl">Personaggi</div><div class="tagwrap">${ents.map(e => `<button class="tag p" data-go="#/person/${encodeURIComponent(e.id)}">${esc(e.name)}</button>`).join("")}</div>` : ""}
-      ${things.length ? `<div class="lbl">Luoghi, veicoli e oggetti</div><div class="tagwrap">${things.map(t => `<button class="tag t" data-go="#/thing/${encodeURIComponent(t.id)}">${esc(t.name)}</button>`).join("")}</div>` : ""}
+      ${ents.length ? `<div class="lbl">Characters</div><div class="tagwrap">${ents.map(e => `<button class="tag p" data-go="#/person/${encodeURIComponent(e.id)}">${esc(e.name)}</button>`).join("")}</div>` : ""}
+      ${things.length ? `<div class="lbl">Places, vehicles and objects</div><div class="tagwrap">${things.map(t => `<button class="tag t" data-go="#/thing/${encodeURIComponent(t.id)}">${esc(t.name)}</button>`).join("")}</div>` : ""}
+      ${assets.length ? `<div class="lbl">Extracted PNG assets</div><div class="tagwrap">${assets.map((a,i) => `<button class="tag" data-asset-index="${i}">${ico("download")} ${esc(a.label)}</button>`).join("")}</div>` : ""}
       ${it.tg?.length ? `<div class="lbl">Tag</div><div class="tagwrap">${it.tg.map(t => `<button class="tag" data-tag="${esc(t)}">${esc(t)}</button>`).join("")}</div>` : ""}
-      ${it.d ? `<div class="lbl">Descrizione</div><div class="desc">${esc(it.d)}</div>` : `<div class="lbl">Descrizione</div><div class="muted">${it.a ? "—" : "In attesa dell'analisi Codex sul PC."}</div>`}
-      <div class="lbl">Note</div><textarea id="dnotes" placeholder="Le tue note…">${esc(it.n || "")}</textarea>
-      <div class="row"><button class="btn" id="dsavenote">Salva nota</button></div>
-      <div class="row"><button class="btn primary" id="ddl" ${it.o ? "" : "disabled"}>${ico("download")} Scarica originale</button>
+      ${it.d ? `<div class="lbl">Description</div><div class="desc">${esc(it.d)}</div>` : `<div class="lbl">Description</div><div class="muted">${it.a ? "—" : "Awaiting Codex analysis on the desktop."}</div>`}
+      <div class="lbl">Notes</div><textarea id="dnotes" placeholder="Your notes…">${esc(it.n || "")}</textarea>
+      <div class="row"><button class="btn" id="dsavenote">Save note</button></div>
+      <div class="row"><button class="btn primary" id="ddl" ${it.o ? "" : "disabled"}>${ico("download")} Download original</button>
         ${it.o ? `<a class="btn" href="https://drive.google.com/file/d/${esc(it.o)}/view" target="_blank" rel="noopener">${ico("ext")} Drive</a>` : ""}</div>
-      ${it.o ? "" : `<div class="muted">L'originale non è ancora stato caricato su Drive dal PC.</div>`}
+      ${it.o ? "" : `<div class="muted">The desktop has not uploaded the original to Drive yet.</div>`}
     </div>`;
   d.scrollTop = 0;
   $("#dback").onclick = () => history.back();
   const viewer = $("#viewer"), img = $("#dimg");
-  thumbUrl(it).then(u => { if (u) { detailUrls.push(u); if (!img.dataset.big) img.src = u; } }).catch(() => {});
-  const big = it.p || it.o;
-  if (big) media(big).then(buf => { const u = URL.createObjectURL(new Blob([buf])); detailUrls.push(u); img.src = u; img.dataset.big = "1"; $("#dspin")?.remove(); })
-    .catch(e => { const s = $("#dspin"); if (s) s.textContent = e instanceof AuthNeeded ? "sessione scaduta" : "anteprima non disponibile"; });
-  else $("#dspin").textContent = "anteprima non ancora su Drive";
+  // The desktop can publish a cropped thumbnail bundle before its separate
+  // original/preview upload is complete. Show that crop in details instead of
+  // displaying a permanent (and misleading) 'not yet on Drive' overlay.
+  loadDetailImage(it, img, $("#dspin"));
+  if (it.mt === "video" && it.o) {
+    viewer.insertAdjacentHTML("beforeend", playOverlay());
+    $("#vplay").onclick = e => { e.stopPropagation(); playVideo(it.o, it.t || it.f, viewer); };
+  }
   let lastTap = 0, sx = 0, sy = 0;
   viewer.addEventListener("click", () => { const now = Date.now(); if (now - lastTap < 300) viewer.classList.toggle("zoom"); lastTap = now; });
   viewer.addEventListener("touchstart", e => { if (e.touches.length === 1) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; } }, {passive: true});
@@ -710,14 +1254,34 @@ function showDetail(){
   }, {passive: true});
   $("#dfav").onclick = async () => { await queueOp({op: "favorite", image: it.i, value: it.fav ? 0 : 1}); showDetail(); };
   d.querySelectorAll("[data-star]").forEach(b => b.onclick = async () => { const n = +b.dataset.star; await queueOp({op: "rating", image: it.i, value: (it.r || 0) === n ? 0 : n}); showDetail(); });
-  $("#dsavenote").onclick = async () => { await queueOp({op: "notes", image: it.i, value: $("#dnotes").value}); toast("Nota inviata al PC"); };
-  $("#dedit").onclick = async () => { const v = prompt("Titolo", it.t || ""); if (v != null && v !== it.t) { await queueOp({op: "title", image: it.i, value: v.trim()}); showDetail(); } };
+  $("#dsavenote").onclick = async () => { await queueOp({op: "notes", image: it.i, value: $("#dnotes").value}); toast("Note sent to the desktop"); };
+  $("#dedit").onclick = async () => { const v = prompt("Title", it.t || ""); if (v != null && v !== it.t) { await queueOp({op: "title", image: it.i, value: v.trim()}); showDetail(); } };
   d.querySelectorAll("[data-go]").forEach(b => b.onclick = () => { closeDetail(); history.replaceState(null, ""); location.hash = b.dataset.go; });
   d.querySelectorAll("[data-tag]").forEach(b => b.onclick = () => { closeDetail(); S.query = b.dataset.tag; history.replaceState(null, ""); go("#/"); });
+  d.querySelectorAll("[data-asset-index]").forEach(btn => btn.onclick = async () => {
+    const asset = assets[Number(btn.dataset.assetIndex)]; if (!asset?.file) return;
+    if (NATIVE) {
+      window.__cvNativeSaved = (id, ok) => { if (id === asset.file && btn.isConnected) btn.textContent = ok ? "Saved to Gallery" : asset.label; };
+      window.CVNative.saveDriveFile(asset.file, asset.id + ".png");
+      return;
+    }
+    btn.disabled = true;
+    try {
+      const buf = await media(asset.file), a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([buf], {type:"image/png"})); a.download = asset.id + ".png";
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    } catch(e) { toast(e.message); }
+    finally { btn.disabled = false; }
+  });
   $("#ddl").onclick = async () => {
+    if (it.mt === "video") {
+      window.open(`https://drive.google.com/uc?export=download&id=${encodeURIComponent(it.o)}`, "_blank", "noopener");
+      return;
+    }
     const btn = $("#ddl"); btn.disabled = true; btn.textContent = "Download…";
-    if (NATIVE) {   // l'app salva direttamente in Galleria › CharacterVault
-      window.__cvNativeSaved = (id, ok) => { const b = $("#ddl"); if (!b) return; b.disabled = !!ok; b.innerHTML = `${ico("download")} ${ok ? "Salvata in Galleria" : "Scarica originale"}`; };
+    if (NATIVE) {   // l'app salva direttamente in Gallery › CharacterVault
+      window.__cvNativeSaved = (id, ok) => { if (id !== it.o) return; const b = $("#ddl"); if (!b) return; b.disabled = !!ok; b.innerHTML = `${ico("download")} ${ok ? "Saved to Gallery" : "Download original"}`; };
       window.CVNative.saveDriveFile(it.o, it.f || (it.i + (it.x || ".jpg")));
       return;
     }
@@ -725,25 +1289,25 @@ function showDetail(){
       const buf = await media(it.o);
       const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([buf])); a.download = it.f || (it.i + (it.x || ".jpg"));
       document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
-      btn.innerHTML = `${ico("download")} Scaricato`;
-    } catch(e) { toast(e.message); btn.disabled = false; btn.innerHTML = `${ico("download")} Scarica originale`; }
+      btn.innerHTML = `${ico("download")} Downloaded`;
+    } catch(e) { toast(e.message); btn.disabled = false; btn.innerHTML = `${ico("download")} Download original`; }
   };
 }
 
 /* ----------------------------------------------------------- filtri */
 function openFilters(){
   const f = S.filters, imgs = S.index.images;
-  const opts = key => [...new Set(imgs.map(x => x[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b, "it"));
-  const sel = (id, key, label) => `<label>${label}</label><select id="${id}"><option value="">Tutti</option>${opts(key).map(v => `<option ${f[id] === v ? "selected" : ""}>${esc(v)}</option>`).join("")}</select>`;
+  const opts = key => [...new Set(imgs.map(x => x[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b, "en"));
+  const sel = (id, key, label) => `<label>${label}</label><select id="${id}"><option value="">All</option>${opts(key).map(v => `<option value="${esc(v)}" ${f[id] === v ? "selected" : ""}>${esc(displayLabel(v))}</option>`).join("")}</select>`;
   const d = document.createElement("div"); d.className = "sheet"; d.id = "fsheet";
-  d.innerHTML = `<div class="bar"><button class="icon-btn" id="fback">${ico("back")}</button><div class="t">Filtri</div><button class="btn" id="freset">Azzera</button></div>
+  d.innerHTML = `<div class="bar"><button class="icon-btn" id="fback">${ico("back")}</button><div class="t">Filters</div><button class="btn" id="freset">Reset</button></div>
     <div class="info filters">
-      <label>Ordina per</label><select id="sort">${[["new","Più recenti"],["old","Meno recenti"],["rating","Voto"],["title","Titolo"]].map(([v,l]) => `<option value="${v}" ${(f.sort||"new") === v ? "selected" : ""}>${l}</option>`).join("")}</select>
-      ${sel("cat", "c", "Categoria")}${sel("subj", "s", "Soggetto")}${sel("style", "st", "Stile")}${sel("rating", "cr", "Contenuto")}
-      <label>Voto minimo</label><select id="minr"><option value="0">Qualsiasi</option>${[1,2,3,4,5].map(n => `<option value="${n}" ${f.minr === n ? "selected" : ""}>${"★".repeat(n)}</option>`).join("")}</select>
-      <div class="switch"><span>Solo preferite</span><input type="checkbox" id="fav" ${f.fav ? "checked" : ""}></div>
-      <div class="switch"><span>Solo in attesa di analisi</span><input type="checkbox" id="pending" ${f.pending ? "checked" : ""}></div>
-      <button class="btn primary wide" id="fapply" style="margin-top:14px">Mostra risultati</button>
+      <label>Sort by</label><select id="sort">${[["new","Newest first"],["old","Oldest first"],["rating","Rating"],["title","Title"]].map(([v,l]) => `<option value="${v}" ${(f.sort||"new") === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+      ${sel("cat", "c", "Category")}${sel("subj", "s", "Subject")}${sel("style", "st", "Style")}${sel("rating", "cr", "Content")}
+      <label>Minimum rating</label><select id="minr"><option value="0">Any</option>${[1,2,3,4,5].map(n => `<option value="${n}" ${f.minr === n ? "selected" : ""}>${"★".repeat(n)}</option>`).join("")}</select>
+      <div class="switch"><span>Favorites only</span><input type="checkbox" id="fav" ${f.fav ? "checked" : ""}></div>
+      <div class="switch"><span>Awaiting analysis only</span><input type="checkbox" id="pending" ${f.pending ? "checked" : ""}></div>
+      <button class="btn primary wide" id="fapply" style="margin-top:14px">Show results</button>
     </div>`;
   document.body.appendChild(d);
   const close = () => d.remove();
@@ -761,15 +1325,15 @@ function openFilters(){
 /* ----------------------------------------------------------- aggiungi */
 function renderAdd(){
   const inbox = S.index.inbox;
-  mountPage(`<div class="section-title"><h2>Aggiungi immagini</h2></div>
-    <div class="panel"><h4>Dal telefono alla galleria</h4>
-      <div class="muted">Le foto compaiono subito in galleria tra «In attesa del PC». Appena Character Vault è aperto su un PC vengono importate, riconosciute e descritte da Codex, e diventano schede complete.</div>
-      ${inbox ? `<div class="row" style="margin-top:14px"><label class="btn primary">${ico("image")} Scegli dalla galleria<input id="pick" type="file" accept="image/*" multiple hidden></label>
-        <label class="btn">${ico("camera")} Scatta<input id="shot" type="file" accept="image/*" capture="environment" hidden></label></div>
-        ${NATIVE ? `<div class="row"><button class="btn wide" id="ncrop">${ico("edit")} Ritaglia in medium close-up e carica</button></div>
-        <div class="muted">Il volto viene trovato sul telefono e il riquadro proposto come nella galleria del PC; puoi spostarlo e cambiare formato. Puoi anche usare «Condividi › Character Vault» da qualsiasi app.</div>` : ""}`
-        : `<div class="banner" style="margin-top:12px"><span>Sul PC imposta la cartella di origine in Importa › Google Drive, poi attendi la prossima pubblicazione.</span></div>`}
-    </div><div id="uploads"></div>`, "Aggiungi");
+  mountPage(`<div class="section-title"><h2>Add images</h2></div>
+    <div class="panel"><h4>From your phone to the gallery</h4>
+      <div class="muted">Photos appear immediately under Awaiting desktop processing. When Character Vault opens on a desktop, they are imported, recognized and described by Codex and become complete records.</div>
+      ${inbox ? `<div class="row" style="margin-top:14px"><label class="btn primary">${ico("image")} Choose from gallery<input id="pick" type="file" accept="image/*,video/*" multiple hidden></label>
+        <label class="btn">${ico("camera")} Take photo<input id="shot" type="file" accept="image/*" capture="environment" hidden></label></div>
+        ${NATIVE ? `<div class="row"><button class="btn wide" id="ncrop">${ico("edit")} Upload with a cover crop</button></div>
+        <div class="muted">The full original is always uploaded. The frame you choose (face detection proposes a medium close-up) becomes only the gallery cover, exactly like a crop chosen on the desktop. You can also use Share › Character Vault from other apps.</div>` : ""}`
+        : `<div class="banner" style="margin-top:12px"><span>Set the source folder in Import › Google Drive on the desktop, then wait for the next publication.</span></div>`}
+    </div><div id="uploads"></div>`, "Add");
   const handle = e => uploadFiles([...e.target.files], inbox);
   if (inbox) { $("#pick").onchange = handle; $("#shot").onchange = handle; }
   if (inbox && NATIVE) $("#ncrop").onclick = () => window.CVNative.openCropper();
@@ -779,63 +1343,113 @@ async function uploadFiles(files, inbox){
   for (const file of files) {
     const row = document.createElement("div"); row.className = "up";
     const url = URL.createObjectURL(file);
-    row.innerHTML = `<img src="${url}" alt=""><div class="n"><b>${esc(file.name)}</b><progress max="1" value="0"></progress><span class="muted">in coda</span></div>`;
+    row.innerHTML = `${file.type.startsWith("video/") ? `<video src="${url}" preload="none" muted style="width:60px;height:60px"></video>` : `<img src="${url}" alt="">`}<div class="n"><b>${esc(file.name)}</b><progress max="1" value="0"></progress><span class="muted">queued</span></div>`;
     box.prepend(row);
     const bar = row.querySelector("progress"), st = row.querySelector(".muted");
     try {
-      st.textContent = "caricamento…";
+      st.textContent = "loading…";
       const res = await uploadLarge(file, inbox, p => bar.value = p);
       if (res && res.id) {
         S.localUploads.set(res.id, url);
-        S.pending.unshift({id: res.id, name: file.name || "foto", createdTime: new Date().toISOString(), size: file.size});
+        S.pending.unshift({id: res.id, name: file.name || "media", mimeType: file.type, createdTime: new Date().toISOString(), size: file.size});
       }
-      bar.value = 1; st.textContent = "Caricata: è già in galleria tra «In attesa del PC»"; st.style.color = "var(--ok)";
+      bar.value = 1; st.textContent = "Uploaded: available under Awaiting desktop processing"; st.style.color = "var(--ok)";
     } catch(e) { st.textContent = e.message; st.style.color = "var(--danger)"; }
   }
 }
 
+/* ----------------------------------------------------------- desktop live status */
+let liveLogBusy = false;
+let lastRemoteLog = null;
+async function updateLiveLog(force=false){
+  if (liveLogBusy || S.view !== "live-log" || document.visibilityState === "hidden") return;
+  liveLogBusy = true;
+  try {
+    const folder = await resolveFolders();
+    const found = await children(folder.web, "cv_live_status_v1.json.gz", false, true);
+    if (!found.length) { $("#live-state").textContent = "Waiting for the home PC to publish its first status. Check the desktop Live Log setting."; return; }
+    const file = found[0];
+    const rev = [file.id,file.version,file.modifiedTime,file.size].join(":");
+    if (!force && lastRemoteLog?.rev === rev) {
+      const age = Math.max(0, Math.round((Date.now() - lastRemoteLog.data.updated_at * 1000)/1000));
+      $("#live-state").textContent = `Last update ${age} seconds ago${age > 120 ? " · PC may be offline or Drive delayed" : ""}`;
+      return;
+    }
+    const data = await gunzipJson(await media(file.id));
+    if (data.schema !== 1 || !Array.isArray(data.events)) throw new Error("Unsupported log format");
+    lastRemoteLog = {rev, data};
+    const age = Math.max(0,Math.round((Date.now() - data.updated_at * 1000)/1000));
+    $("#live-state").textContent = `Last update ${age} seconds ago · ${data.events.length} recent events${age > 120 ? " · PC may be offline" : ""}`;
+    const filter = $("#live-filter").value;
+    const events = data.events.filter(x => !filter || x.channel === filter);
+    $("#live-lines").textContent = events.map(x => `${x.at || ""} [${String(x.channel || "").toUpperCase()}] ${x.message || ""}`).join("\n") || "No recent events";
+    $("#live-lines").scrollTop = $("#live-lines").scrollHeight;
+  } catch(e) {
+    if ($("#live-state")) $("#live-state").textContent = "Log unavailable: " + (e.message || "Drive connection error");
+  } finally { liveLogBusy = false; }
+}
+function renderLiveLog(){
+  mountPage(`<div class="section-title"><h2>Home PC · General Log</h2></div>
+    <div class="panel"><div class="row"><select id="live-filter"><option value="">All</option><option value="agents">AI Agents</option><option value="drive">Drive</option><option value="import">Import</option><option value="codex">Codex</option><option value="local">Local</option></select><button class="btn" id="live-refresh">${ico("refresh")} Refresh</button></div>
+      <p class="muted" id="live-state">Connecting to the home PC status feed…</p>
+      <pre id="live-lines" style="white-space:pre-wrap;overflow:auto;max-height:62vh;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--bg2);color:var(--text2);font:11px/1.6 monospace"></pre></div>
+    <p class="muted">Drive-synced, read-only, redacted status; not direct remote access. Updates may be delayed while offline.</p>`, "Live Log");
+  $("#live-refresh").onclick = () => updateLiveLog(true);
+  $("#live-filter").onchange = () => { if (lastRemoteLog) {
+    $("#live-lines").textContent = lastRemoteLog.data.events.filter(x=>!$("#live-filter").value || x.channel === $("#live-filter").value).map(x=>`${x.at || ""} [${String(x.channel || "").toUpperCase()}] ${x.message || ""}`).join("\n") || "No recent events";
+  }};
+  void updateLiveLog();
+}
+setInterval(() => { if (S.view === "live-log") void updateLiveLog(); }, 15000);
+
 /* ----------------------------------------------------------- impostazioni */
 function renderSettings(){
-  mountPage(`<div class="section-title"><h2>Impostazioni</h2></div>
-    <div class="panel"><h4>Archivio</h4><div class="muted">${S.index.images.length.toLocaleString("it-IT")} immagini · ${S.index.entities.length} personaggi · ${S.index.things.length} schede catalogo<br>Indice generato da ${esc(S.index.machine)} il ${new Date(S.index.generated).toLocaleString("it-IT")}</div>
-      <div class="row"><button class="btn" id="sref">${ico("refresh")} Aggiorna ora</button></div></div>
-    <div class="panel"><h4>Privacy</h4><div class="switch"><span>Sfoca le miniature con contenuto «esplicito»</span><input type="checkbox" id="sblur" ${S.blurExplicit ? "checked" : ""}></div></div>
-    <div class="panel"><h4>Spazio sul telefono</h4><div class="muted" id="sspace">Calcolo…</div><div class="row"><button class="btn" id="sclear">Svuota cache miniature</button></div></div>
-    <div class="panel"><h4>Collegamento</h4><label class="muted">Cartella dell'archivio</label><input class="txt" id="sroot" value="${esc(localStorage.getItem("cv_root") || DEFAULT_ROOT)}">
+  mountPage(`<div class="section-title"><h2>Settings</h2></div>
+    <div class="panel"><h4>Archive</h4><div class="muted">${S.index.images.length.toLocaleString("en-US")} assets · ${S.index.entities.length} characters · ${S.index.things.length} catalog records<br>Index generated by ${esc(S.index.machine)} on ${new Date(S.index.generated).toLocaleString("en-US")}${S.index.missing_thumbs ? `<p>${S.index.missing_thumbs} cropped previews still awaiting publication by the desktop.</p>` : ""}</div>
+      <div class="row"><button class="btn" id="sref">${ico("refresh")} Refresh now</button></div></div>
+    <div class="panel"><h4>Android synchronization · 6.0.11</h4>
+      <div class="muted">Checks for new gallery content and portrait-crop bundles every 40 seconds while the Android app is open. Incoming uploads go to the folder configured in the published Drive index.</div>
+      <div class="muted" style="margin-top:8px">Gallery: ${S.index.images.length} records · cropped previews: ${S.index.images.filter(x => Array.isArray(x.k) && x.k.length === 3).length} · pending crops: ${Number(S.index.missing_thumbs || 0)}</div></div>
+    <div class="panel"><h4>Desktop General Log</h4><div class="muted">Read-only activity from your home PC, updated through your private Drive archive about every 30 seconds while the desktop is running. Sensitive details are hidden.</div>
+      <div class="row"><button class="btn primary" id="slive">Open live log</button></div></div>
+    <div class="panel"><h4>Privacy</h4><div class="switch"><span>Blur thumbnails rated Explicit</span><input type="checkbox" id="sblur" ${S.blurExplicit ? "checked" : ""}></div></div>
+    <div class="panel"><h4>Device storage</h4><div class="muted" id="sspace">Calculating…</div><div class="row"><button class="btn" id="sclear">Clear thumbnail cache</button></div></div>
+    <div class="panel"><h4>Connection</h4><label class="muted">Archive folder</label><input class="txt" id="sroot" value="${esc(localStorage.getItem("cv_root") || DEFAULT_ROOT)}">
       ${NATIVE ? "" : `<label class="muted" style="display:block;margin-top:10px">Client ID OAuth (Web)</label><input class="txt" id="scid" value="${esc(clientId())}">`}
-      <div class="row"><button class="btn" id="ssave">Salva</button><button class="btn" id="sout">Esci da Google</button></div></div>`, "Impostazioni");
+      <div class="row"><button class="btn" id="ssave">Save</button><button class="btn" id="sout">Sign out of Google</button></div></div>`, "Settings");
   $("#sref").onclick = () => refresh(true);
+  $("#slive").onclick = () => go("#/live-log");
   $("#sblur").onchange = e => { S.blurExplicit = e.target.checked; save("cv_blur", S.blurExplicit); };
-  navigator.storage?.estimate?.().then(e => $("#sspace").textContent = `Usati ${(e.usage / 1e6).toFixed(0)} MB (indice e miniature in cache).`);
-  $("#sclear").onclick = async () => { await caches.delete("cv-packs"); S.packs.clear(); S.packOrder = []; toast("Cache svuotata"); render(); };
+  navigator.storage?.estimate?.().then(e => $("#sspace").textContent = `Used ${(e.usage / 1e6).toFixed(0)} MB (cached index and thumbnails).`);
+  $("#sclear").onclick = async () => { await caches.delete("cv-packs"); S.packs.clear(); S.packOrder = []; toast("Cache cleared"); render(); };
   $("#ssave").onclick = () => { localStorage.setItem("cv_root", $("#sroot").value.trim()); if (!NATIVE) localStorage.setItem("cv_client_id", $("#scid").value.trim()); S.folders = null; location.reload(); };
   $("#sout").onclick = () => { try { NATIVE ? window.CVNative.signOut() : google.accounts.oauth2.revoke(S.token, () => {}); } catch(e){} S.token = null; sessionStorage.clear(); localStorage.removeItem("cv_logged"); location.hash = ""; location.reload(); };
 }
 
 /* ----------------------------------------------------------- primo accesso */
 function loginHtml(){
-  return `<div class="login"><img src="icon-192.png" alt=""><h1>Character Vault</h1><p>La tua galleria, dal telefono.</p>
-    ${NATIVE ? "" : `<label>Client ID OAuth (tipo «Applicazione web»)</label><input class="txt" id="lcid" placeholder="123…apps.googleusercontent.com" value="${esc(clientId())}">`}
-    <label>Cartella dell'archivio su Drive</label><input class="txt" id="lroot" value="${esc(localStorage.getItem("cv_root") || DEFAULT_ROOT)}">
-    <button class="btn primary wide" id="lgo" style="margin-top:20px">Accedi con Google</button>
+  return `<div class="login"><img src="icon-192.png" alt=""><h1>Character Vault</h1><p>Your gallery, on your phone.</p>
+    ${NATIVE ? "" : `<label>OAuth client ID (Web application)</label><input class="txt" id="lcid" placeholder="123…apps.googleusercontent.com" value="${esc(clientId())}">`}
+    <label>Drive archive folder</label><input class="txt" id="lroot" value="${esc(localStorage.getItem("cv_root") || DEFAULT_ROOT)}">
+    <button class="btn primary wide" id="lgo" style="margin-top:20px">Sign in with Google</button>
     <p class="muted" id="lmsg" style="margin-top:14px"></p></div>`;
 }
 function bindLogin(){
   $("#lgo").onclick = async () => {
     const cid = NATIVE ? "android" : $("#lcid").value.trim(), root = $("#lroot").value.trim();
-    if (!NATIVE && !/\.apps\.googleusercontent\.com$/.test(cid)) { $("#lmsg").textContent = "Client ID non valido."; return; }
-    if (!folderId(root)) { $("#lmsg").textContent = "Link della cartella non valido."; return; }
+    if (!NATIVE && !/\.apps\.googleusercontent\.com$/.test(cid)) { $("#lmsg").textContent = "Invalid client ID."; return; }
+    if (!folderId(root)) { $("#lmsg").textContent = "Invalid folder link."; return; }
     if (!NATIVE) localStorage.setItem("cv_client_id", cid);
     localStorage.setItem("cv_root", root);
     S.tokenClient = null;
-    try { await login("consent"); start(); } catch(e) { localStorage.removeItem("cv_logged"); $("#lmsg").textContent = "Accesso non riuscito: " + e.message; }
+    try { await login("consent"); start(); } catch(e) { localStorage.removeItem("cv_logged"); $("#lmsg").textContent = "Sign-in failed: " + e.message; }
   };
 }
 
 /* ============================================================= avvio */
 async function refresh(force){
   const btn = $("#refresh"); if (btn) btn.style.opacity = ".4";
-  try { const changed = await loadIndex(force); await loadPending(); await flushOps(); render(); toast(changed ? "Archivio aggiornato" : "Già aggiornato"); }
+  try { const changed = await loadIndex(force); await loadPending(); await flushOps(); render(); toast(changed ? "Archive updated" : "Already up to date"); }
   catch(e) { if (!(e instanceof AuthNeeded)) toast(e.message, 5000); }
   finally { if (btn) btn.style.opacity = ""; }
 }
@@ -860,15 +1474,29 @@ async function start(){
 }
 // Tornando nell'app (o ogni 3 minuti mentre è aperta): se il PC ha pubblicato novità si aggiorna da sola.
 let autoBusy = false;
-async function autoRefresh(){
+async function autoRefresh(force=false){
   if (autoBusy || !S.index || (!NATIVE && (!S.token || Date.now() > S.tokenExp)) || $("#detail") || $("#fsheet")) return;
   autoBusy = true;
   try {
-    const changed = await loadIndex(false);
+    const previousGeneration = S.index.generated_ts;
+    const previousCount = S.index.images.length;
+    const previousPending = S.index.media_pending ?? 0;
+    const fetched = await loadIndex(force);
+    // A foreground resume forces a freshness check, not an unconditional
+    // "Archive updated" notification or a disruptive re-render.
+    const changed = fetched && (S.index.generated_ts !== previousGeneration ||
+      S.index.images.length !== previousCount || (S.index.media_pending ?? 0) !== previousPending);
     const before = S.pending.length; await loadPending();
-    if (changed || before !== S.pending.length) { render(); if (changed) toast("Archivio aggiornato"); }
-  } catch(e) {} finally { autoBusy = false; }
+    if (changed || before !== S.pending.length) { render(); if (changed) toast("Archive updated"); }
+  } catch(e) {
+    // Keep the cached gallery available offline but show actionable diagnostics.
+    // Do not spam a toast at every forty-second foreground poll.
+    if (force) toast('Drive refresh unavailable: ' + (e?.message || 'try again'), 5000);
+  } finally { autoBusy = false; }
 }
+// Native Android activity handles reliable foreground/background lifecycle and
+// one-minute checks. The browser/PWA keeps its existing three-minute cadence.
+window.__cvAutoSyncFromAndroid = force => { if (NATIVE) void autoRefresh(force === true); };
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") autoRefresh(); });
 setInterval(autoRefresh, 180000);
 restoreToken();
