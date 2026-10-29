@@ -22,7 +22,9 @@ jobs:
           Set-Content "$old\INSTALLA_RC278_SYNC_611.bat" '@echo old hotfix'
           Set-Content "$old\START_NOTEBOOK_8GB.bat" '@echo launcher'
           Set-Content "$old\Library\photo.jpg" 'USER MEDIA'
-          python -c "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); c.execute('create table t(v)'); c.execute(\"insert into t values('notes')\"); c.commit()" "$old\Data\db\character_vault.sqlite3"
+          Set-Content -Encoding ascii mkdb.py "import sqlite3, sys`nc = sqlite3.connect(sys.argv[1])`nc.execute('create table t(v)')`nc.execute('insert into t values (1)')`nc.commit()`n"
+          python mkdb.py "$old\Data\db\character_vault.sqlite3"
+          if (-not (Test-Path "$old\Data\db\character_vault.sqlite3")) { throw "test catalog not created" }
           Set-Content "$new\main.py" 'print("new")'
           Set-Content "$new\character_vault\__init__.py" '__version__ = "7.1.0"'
           Copy-Item install_update.py, AGGIORNA_CHARACTER_VAULT.bat $new
