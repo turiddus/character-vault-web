@@ -1,6 +1,5 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-chcp 65001 >nul
 cd /d "%~dp0"
 title Character Vault 7.1.0 - aggiornamento
 echo.
