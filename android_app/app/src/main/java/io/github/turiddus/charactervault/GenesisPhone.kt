@@ -207,7 +207,7 @@ object GenesisPhone {
     }
 
     /** Checks and writes the reservation; returns the job id. Throws with a readable message when not allowed. */
-    fun reserve(ctx: Context, model: String, quality: String, size: String, prompt: String): JSONObject = synchronized(lock) {
+    fun reserve(ctx: Context, model: String, quality: String, size: String, prompt: String, dna: String = ""): JSONObject = synchronized(lock) {
         if (model !in MODELS || quality !in QUALITIES || size !in SIZES) throw IllegalArgumentException("Invalid model, quality or size.")
         if (prompt.length < 40 || prompt.length > 30000) throw IllegalArgumentException("Invalid prompt.")
         if (!hasKey(ctx)) throw IllegalStateException("Save your OpenAI API key on this phone first.")
@@ -223,6 +223,7 @@ object GenesisPhone {
         val job = JSONObject().put("id", id).put("ts", now / 1000).put("day", day(now))
             .put("model", model).put("quality", quality).put("size", size)
             .put("status", "reserved").put("estimate", cost).put("reserve", reserve).put("upload", "none")
+        if (Regex("^[0-9a-f]{8,32}$").matches(dna)) job.put("dna", dna)
         val list = entries(ctx)
         list.put(job)
         store(ctx, list)
@@ -316,12 +317,14 @@ object GenesisPhone {
         val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val name = "genesis_phone_${stamp}_${id.takeLast(4)}.png"
         val settings = "Steps: 1, Size: ${job.getString("size")}, Model: ${job.getString("model")}, " +
-            "Quality: ${job.getString("quality")}, Version: Genesis phone ${BuildConfigCompatVersion.name(ctx)}"
+            "Quality: ${job.getString("quality")}, Version: Genesis phone ${BuildConfigCompatVersion.name(ctx)}" +
+            (if (job.optString("dna").isNotEmpty()) ", DNA: ${job.optString("dna")}" else "")
         val png = withText(raw, listOf("parameters" to "$prompt\n$settings", "Software" to "Character Vault Genesis (phone)"))
         File(dir(ctx), name).writeBytes(png)
         update(ctx, id) { e ->
             e.put("status", "done").put("cost", measured ?: e.optDouble("estimate", 0.0)).put("measured", measured != null)
                 .put("file", name).put("bytes", png.size.toLong())
+                .put("sha256", java.security.MessageDigest.getInstance("SHA-256").digest(png).joinToString("") { "%02x".format(it) })
             if (usage != null) e.put("tokens", JSONObject()
                 .put("input", usage.optLong("input_tokens")).put("output", usage.optLong("output_tokens"))
                 .put("total", usage.optLong("total_tokens")))

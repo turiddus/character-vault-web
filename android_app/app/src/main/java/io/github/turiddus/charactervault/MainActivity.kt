@@ -329,8 +329,11 @@ class MainActivity : EnglishActivity() {
     }
 
     // ------------------------------------------------------------------ 8.2.1 Genesis on the phone
-    private fun genesisEvent(type: String, name: String?, message: String?) =
-        js("window.__cvGenesisPhone && window.__cvGenesisPhone(${q(JSONObject().put("type", type).put("name", name ?: "").put("message", message ?: "").toString())})")
+    private fun genesisEvent(type: String, name: String?, message: String?, extra: Map<String, String> = emptyMap()) {
+        val event = JSONObject().put("type", type).put("name", name ?: "").put("message", message ?: "")
+        for ((k, v) in extra) event.put(k, v)
+        js("window.__cvGenesisPhone && window.__cvGenesisPhone(${q(event.toString())})")
+    }
 
     /** Uploads a phone-generated image to the Drive inbox, like any phone photo: the PC imports it, Codex catalogs it. */
     private fun genesisSend(name: String) {
@@ -514,12 +517,16 @@ class MainActivity : EnglishActivity() {
         } catch (e: Exception) { e.message ?: "Invalid amount." }
 
         /** Starts one paid generation; returns "" when started, otherwise the reason. Result via __cvGenesisPhone. */
-        @JavascriptInterface fun genesisPhoneGenerate(model: String, quality: String, size: String, prompt: String, autoSend: Boolean): String {
+        @JavascriptInterface fun genesisPhoneGenerate(model: String, quality: String, size: String, prompt: String, autoSend: Boolean): String =
+            genesisPhoneGenerateDna(model, quality, size, prompt, autoSend, "")
+
+        /** 8.3: same as genesisPhoneGenerate, with the Genesis DNA id of the character (shared anti-repetition memory). */
+        @JavascriptInterface fun genesisPhoneGenerateDna(model: String, quality: String, size: String, prompt: String, autoSend: Boolean, dna: String): String {
             val ctx = this@MainActivity
             val job: JSONObject = synchronized(this) {
                 if (genesisBusy) return "A generation is already running."
                 val reserved = try {
-                    GenesisPhone.reserve(ctx, model, quality, size, prompt)
+                    GenesisPhone.reserve(ctx, model, quality, size, prompt, dna)
                 } catch (e: Exception) {
                     return e.message ?: "Not allowed."
                 }
@@ -532,14 +539,17 @@ class MainActivity : EnglishActivity() {
                 try {
                     val name = GenesisPhone.generate(ctx, job, prompt)
                     genesisBusy = false
-                    genesisEvent("generated", name, null)
+                    val sha = GenesisPhone.file(ctx, name)?.let { f ->
+                        java.security.MessageDigest.getInstance("SHA-256").digest(f.readBytes()).joinToString("") { "%02x".format(it) }
+                    } ?: ""
+                    genesisEvent("generated", name, null, mapOf("sha" to sha, "dna" to job.optString("dna")))
                     if (autoSend) main.post { genesisSend(name) }
                 } catch (e: GenesisPhone.Uncertain) {
                     GenesisPhone.uncertain(ctx, id, e.message ?: "uncertain")
-                    genesisEvent("uncertain", null, e.message)
+                    genesisEvent("uncertain", null, e.message, mapOf("dna" to job.optString("dna")))
                 } catch (e: Exception) {
                     GenesisPhone.failed(ctx, id, e.message ?: e.javaClass.simpleName)
-                    genesisEvent("failed", null, e.message ?: e.javaClass.simpleName)
+                    genesisEvent("failed", null, e.message ?: e.javaClass.simpleName, mapOf("dna" to job.optString("dna")))
                 } finally {
                     genesisBusy = false
                     main.post { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
