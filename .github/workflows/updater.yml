@@ -27,13 +27,15 @@ jobs:
           Set-Content "$new\character_vault\__init__.py" '__version__ = "7.1.0"'
           Copy-Item install_update.py, AGGIORNA_CHARACTER_VAULT.bat $new
           python -c "import hashlib,json,pathlib,sys; r=pathlib.Path(sys.argv[1]); files=['main.py','character_vault/__init__.py']; json.dump({f: hashlib.sha256((r/f).read_bytes()).hexdigest() for f in files}, open(r/'SOURCE_MANIFEST_SHA256.json','w'))" "$new"
+          [IO.File]::WriteAllText("$env:RUNNER_TEMP\answers.txt", "$old`r`nAGGIORNA`r`n`r`n")
+          [IO.File]::WriteAllText("$env:RUNNER_TEMP\cancel.txt", "$old`r`nNO`r`n`r`n")
           "OLD=$old" | Out-File -Append $env:GITHUB_ENV
           "NEW=$new" | Out-File -Append $env:GITHUB_ENV
       - name: Run AGGIORNA_CHARACTER_VAULT.bat
         shell: cmd
         run: |
           cd /d "%NEW%"
-          (echo %OLD%& echo AGGIORNA& echo.)| call AGGIORNA_CHARACTER_VAULT.bat > "%GITHUB_WORKSPACE%\update.log" 2>&1
+          call AGGIORNA_CHARACTER_VAULT.bat < "%RUNNER_TEMP%\answers.txt" > "%GITHUB_WORKSPACE%\update.log" 2>&1
           type "%GITHUB_WORKSPACE%\update.log"
           findstr /c:"FATTO" "%GITHUB_WORKSPACE%\update.log" || exit /b 1
           findstr /c:"new" "%OLD%\main.py" || exit /b 1
@@ -43,7 +45,7 @@ jobs:
           dir /s /b "%OLD%\Data\backups\updates" | findstr /c:"retired_files\INSTALLA_RC278_SYNC_611.bat" || exit /b 1
           dir /s /b "%OLD%\Data\backups\updates" | findstr /c:"catalog_before_update.sqlite3" || exit /b 1
           echo --- wrong confirmation: nothing changes
-          (echo %OLD%& echo NO& echo.)| call AGGIORNA_CHARACTER_VAULT.bat > "%GITHUB_WORKSPACE%\cancel.log" 2>&1
+          call AGGIORNA_CHARACTER_VAULT.bat < "%RUNNER_TEMP%\cancel.txt" > "%GITHUB_WORKSPACE%\cancel.log" 2>&1
           findstr /c:"Annullato" "%GITHUB_WORKSPACE%\cancel.log" || exit /b 1
       - name: Report
         if: always()
