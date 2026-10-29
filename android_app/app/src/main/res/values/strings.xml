@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Character Vault</string>
     <string name="share_label">Add to Character Vault</string>
+    <string name="share_link_label">Download video (Character Vault)</string>
 </resources>

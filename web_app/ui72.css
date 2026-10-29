@@ -168,3 +168,21 @@ html.cols-fixed .grid .card{border-radius:calc(14px - var(--cols,3) * 1.5px)}
   .card img.ok,.ent .cv img.ok,.card:not(:has(img.ok))::before{animation:none}
 }
 .grid .card{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+
+/* 7.3 links */
+.links73 h4{display:flex;align-items:center;gap:8px}
+.links73 h4 svg{width:18px;height:18px}
+.lk-row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.lk-row input{flex:1;min-width:0;height:42px;border-radius:12px;border:1px solid var(--border);background:var(--bg2);color:var(--text);padding:0 12px;font-size:15px}
+.lk-row .muted{font-size:12.5px}
+#links73{margin-top:10px}
+.lk-item{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--border)}
+.lk-ic{width:34px;height:34px;border-radius:10px;background:var(--bg2);display:grid;place-items:center;font-size:17px;flex:none}
+.lk-n{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.lk-n b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lk-n .muted{font-size:12.5px}
+.lk-item.st-failed .lk-n .muted{color:var(--danger)}
+.lk-item.st-done .lk-n .muted{color:var(--ok)}
+.lk-bar{height:4px;border-radius:4px;background:var(--bg2);overflow:hidden;margin-top:3px}
+.lk-bar span{display:block;height:100%;background:var(--accent);border-radius:4px;transition:width .6s ease}
+.lk-banner{cursor:pointer}

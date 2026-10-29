@@ -60,6 +60,8 @@ class MainActivity : EnglishActivity() {
     private var inbox = ""
     private var jsReady = false
     private val sharedQueue = ArrayList<Uri>()
+    /** 7.3: a link shared as text (YouTube, TikTok, Instagram…): the PC downloads the video. */
+    private var sharedText: String? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var cameraUri: Uri? = null
     @Volatile private var pageReady = false
@@ -234,7 +236,15 @@ class MainActivity : EnglishActivity() {
     private fun collectShared(intent: Intent?) {
         intent ?: return
         when (intent.action) {
-            Intent.ACTION_SEND -> uriExtra(intent)?.let { sharedQueue.add(it) }
+            Intent.ACTION_SEND -> {
+                val stream = uriExtra(intent)
+                if (stream != null) sharedQueue.add(stream)
+                else if ((intent.type ?: "").startsWith("text/")) {
+                    val text = listOfNotNull(intent.getStringExtra(Intent.EXTRA_TEXT), intent.getStringExtra(Intent.EXTRA_SUBJECT))
+                        .joinToString(" ").trim()
+                    if (text.isNotEmpty()) sharedText = text.take(4000)
+                }
+            }
             Intent.ACTION_SEND_MULTIPLE -> uriListExtra(intent)?.let { sharedQueue.addAll(it) }
         }
         intent.action = Intent.ACTION_MAIN   // non rielaborare dopo una rotazione
@@ -251,7 +261,12 @@ class MainActivity : EnglishActivity() {
         else intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)
 
     private fun processShared() {
-        if (sharedQueue.isEmpty() || !jsReady) return
+        if (!jsReady) return
+        sharedText?.let { text ->
+            sharedText = null
+            js("window.__cvSharedLink && window.__cvSharedLink(${q(text)})")
+        }
+        if (sharedQueue.isEmpty()) return
         if (inbox.isEmpty()) {
             toast("Set the Drive source folder on the desktop (Import › Google Drive), then try sharing again.")
             sharedQueue.clear(); return

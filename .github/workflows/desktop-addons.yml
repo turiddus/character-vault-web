@@ -1,0 +1,39 @@
+name: Desktop add-ons (Windows)
+on:
+  push:
+    branches: [android-app]
+    paths: [desktop_ci/**, .github/workflows/desktop-addons.yml]
+  workflow_dispatch:
+jobs:
+  addons:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: yt-dlp add-on, FFmpeg, real download, CineRemix runtime (embedded Python 3.11.9, path with & and spaces)
+        shell: cmd
+        run: |
+          python desktop_ci\windows_check.py "%RUNNER_TEMP%" > "%GITHUB_WORKSPACE%\addons.log" 2>&1
+          set CODE=%ERRORLEVEL%
+          type "%GITHUB_WORKSPACE%\addons.log"
+          exit /b %CODE%
+      - name: Report
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, re
+          text = open("addons.log", encoding="utf-8", errors="replace").read()
+          start = text.find("{")
+          try:
+              r = json.loads(text[start:text.rfind("}") + 1])
+          except Exception:
+              print("::error title=report::" + text[-3000:].replace("\n", "%0A")); raise SystemExit
+          for k, v in r.items():
+              if isinstance(v, dict) and "error" in v:
+                  print(f"::error title={k}::" + (v["error"] + " | " + v.get("trace", "")).replace("\n", "%0A")[:3500])
+          short = {k: (v if not isinstance(v, (dict, list)) else json.dumps(v)[:300]) for k, v in r.items()}
+          print("::notice title=add-ons::" + json.dumps(short)[:3900])
+          PY
