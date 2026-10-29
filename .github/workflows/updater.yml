@@ -42,8 +42,8 @@ jobs:
           if exist "%OLD%\INSTALLA_RC278_SYNC_611.bat" exit /b 1
           if not exist "%OLD%\START_NOTEBOOK_8GB.bat" exit /b 1
           findstr /c:"USER MEDIA" "%OLD%\Library\photo.jpg" || exit /b 1
-          dir /s /b "%OLD%\Data\backups\updates" | findstr /c:"retired_files\INSTALLA_RC278_SYNC_611.bat" || exit /b 1
-          dir /s /b "%OLD%\Data\backups\updates" | findstr /c:"catalog_before_update.sqlite3" || exit /b 1
+          dir /s /b "%OLD%\Data\backups\updates\INSTALLA_RC278_SYNC_611.bat" || exit /b 1
+          dir /s /b "%OLD%\Data\backups\updates\catalog_before_update.sqlite3" || exit /b 1
           echo --- wrong confirmation: nothing changes
           call AGGIORNA_CHARACTER_VAULT.bat < "%RUNNER_TEMP%\cancel.txt" > "%GITHUB_WORKSPACE%\cancel.log" 2>&1
           findstr /c:"Annullato" "%GITHUB_WORKSPACE%\cancel.log" || exit /b 1
