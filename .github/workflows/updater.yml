@@ -1,0 +1,52 @@
+name: Updater (Windows)
+on:
+  push:
+    branches: [android-app]
+    paths: [AGGIORNA_CHARACTER_VAULT.bat, install_update.py, .github/workflows/updater.yml]
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: Old RC2.7.8 installation and a 7.1.0 payload
+        shell: pwsh
+        run: |
+          $old = "$env:RUNNER_TEMP\AI & Co (test)\CharacterVault"
+          $new = "$env:RUNNER_TEMP\Download\CharacterVault_7.1.0"
+          New-Item -ItemType Directory -Force "$old\character_vault", "$old\Data\db", "$old\Library", "$new\character_vault" | Out-Null
+          Set-Content "$old\main.py" 'print("old")'
+          Set-Content "$old\character_vault\__init__.py" '__version__ = "7.0.0-ultimate-adaptive-rc2.7.8-legacy-mobile-sync-no-agents"'
+          Set-Content "$old\INSTALLA_RC278_SYNC_611.bat" '@echo old hotfix'
+          Set-Content "$old\START_NOTEBOOK_8GB.bat" '@echo launcher'
+          Set-Content "$old\Library\photo.jpg" 'USER MEDIA'
+          python -c "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); c.execute('create table t(v)'); c.execute(\"insert into t values('notes')\"); c.commit()" "$old\Data\db\character_vault.sqlite3"
+          Set-Content "$new\main.py" 'print("new")'
+          Set-Content "$new\character_vault\__init__.py" '__version__ = "7.1.0"'
+          Copy-Item install_update.py, AGGIORNA_CHARACTER_VAULT.bat $new
+          python -c "import hashlib,json,pathlib,sys; r=pathlib.Path(sys.argv[1]); files=['main.py','character_vault/__init__.py']; json.dump({f: hashlib.sha256((r/f).read_bytes()).hexdigest() for f in files}, open(r/'SOURCE_MANIFEST_SHA256.json','w'))" "$new"
+          "OLD=$old" | Out-File -Append $env:GITHUB_ENV
+          "NEW=$new" | Out-File -Append $env:GITHUB_ENV
+      - name: Run AGGIORNA_CHARACTER_VAULT.bat
+        shell: cmd
+        run: |
+          cd /d "%NEW%"
+          (echo %OLD%& echo AGGIORNA& echo.)| call AGGIORNA_CHARACTER_VAULT.bat > "%GITHUB_WORKSPACE%\update.log" 2>&1
+          type "%GITHUB_WORKSPACE%\update.log"
+          findstr /c:"FATTO" "%GITHUB_WORKSPACE%\update.log" || exit /b 1
+          findstr /c:"new" "%OLD%\main.py" || exit /b 1
+          if exist "%OLD%\INSTALLA_RC278_SYNC_611.bat" exit /b 1
+          if not exist "%OLD%\START_NOTEBOOK_8GB.bat" exit /b 1
+          findstr /c:"USER MEDIA" "%OLD%\Library\photo.jpg" || exit /b 1
+          dir /s /b "%OLD%\Data\backups\updates" | findstr /c:"retired_files\INSTALLA_RC278_SYNC_611.bat" || exit /b 1
+          dir /s /b "%OLD%\Data\backups\updates" | findstr /c:"catalog_before_update.sqlite3" || exit /b 1
+          echo --- wrong confirmation: nothing changes
+          (echo %OLD%& echo NO& echo.)| call AGGIORNA_CHARACTER_VAULT.bat > "%GITHUB_WORKSPACE%\cancel.log" 2>&1
+          findstr /c:"Annullato" "%GITHUB_WORKSPACE%\cancel.log" || exit /b 1
+      - name: Report
+        if: always()
+        shell: bash
+        run: |
+          for f in update.log cancel.log; do [ -f $f ] && echo "::notice title=$f::$(sed ':a;N;$!ba;s/\n/%0A/g' $f | cut -c1-3000)"; done; true
