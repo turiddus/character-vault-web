@@ -172,6 +172,8 @@ class MainActivity : EnglishActivity() {
 
     override fun onPause() {
         main.removeCallbacks(syncEvery40Seconds)
+        // 7.2: stories and their background music stop when the app leaves the screen.
+        if (jsReady) js("window.__cvAppPaused && window.__cvAppPaused()")
         super.onPause()
     }
 
