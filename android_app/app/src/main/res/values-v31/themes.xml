@@ -1,0 +1,17 @@
+<resources>
+    <style name="Theme.CharacterVault" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg0</item>
+        <item name="android:statusBarColor">@color/bg0</item>
+        <item name="android:navigationBarColor">@color/bg1</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Android 12+: the mark draws itself (arch, then the eye). -->
+    <style name="Theme.CharacterVault.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/bg0</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_animated</item>
+        <item name="windowSplashScreenAnimationDuration">1000</item>
+        <item name="postSplashScreenTheme">@style/Theme.CharacterVault</item>
+    </style>
+</resources>

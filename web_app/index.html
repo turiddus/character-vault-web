@@ -161,6 +161,7 @@ label.btn{cursor:pointer}
 .viz-timeline{width:100%;height:auto;display:block;min-height:124px;max-height:220px}
 @media(min-width:780px){.viz-kpis{grid-template-columns:repeat(4,1fr)}.viz-grid{grid-template-columns:minmax(0,1.4fr) minmax(240px,1fr)}}
 </style>
+<link rel="stylesheet" href="ui72.css">
 </head>
 <body>
 <div id="app"></div>
@@ -203,6 +204,24 @@ const ICONS = {
   image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 16-5-5-9 9"/>',
 };
 const ico = n => `<svg viewBox="0 0 24 24">${ICONS[n]}</svg>`;
+// Logo inside the page (7.2): never a broken image, animated on the welcome/loading screens.
+let logoSeq = 0;
+function logoSvg(size, cls=""){
+  const n = ++logoSeq, g = "cvlg" + n, bg = "cvlb" + n, gl = "cvlw" + n;
+  return `<svg class="cv-logo ${cls}" width="${size}" height="${size}" viewBox="0 0 512 512" aria-hidden="true">
+    <defs><linearGradient id="${g}" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#ead08f"/><stop offset=".55" stop-color="#d4ac62"/><stop offset="1" style="stop-color:var(--accent)"/></linearGradient>
+      <radialGradient id="${bg}" cx=".5" cy=".3" r=".8"><stop offset="0" stop-color="#2d1a26"/><stop offset=".7" stop-color="#140f17"/><stop offset="1" stop-color="#0a080c"/></radialGradient>
+      <radialGradient id="${gl}" cx=".5" cy=".58" r=".35"><stop offset="0" style="stop-color:var(--accent)" stop-opacity=".5"/><stop offset="1" style="stop-color:var(--accent)" stop-opacity="0"/></radialGradient></defs>
+    <rect x="12" y="12" width="488" height="488" rx="112" fill="url(#${bg})"/>
+    <rect class="lg-glow" x="12" y="12" width="488" height="488" rx="112" fill="url(#${gl})"/>
+    <rect x="13.5" y="13.5" width="485" height="485" rx="110" fill="none" stroke="#3b2a36" stroke-width="3"/>
+    <path class="lg-draw" pathLength="1" d="M140 414 V246 C140 166 198 112 256 70 C314 112 372 166 372 246 V414" fill="none" stroke="url(#${g})" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+    <path class="lg-draw lg-d2" pathLength="1" d="M182 414 V258 C182 204 218 162 256 133 C294 162 330 204 330 258 V414" fill="none" stroke="url(#${g})" stroke-width="7" stroke-opacity=".55"/>
+    <path class="lg-draw lg-d3" pathLength="1" d="M112 414 H400" fill="none" stroke="url(#${g})" stroke-width="20" stroke-linecap="round"/>
+    <g class="lg-eye"><path d="M190 300 C220 258 292 258 322 300 C292 342 220 342 190 300 Z" fill="#0d0a10" stroke="url(#${g})" stroke-width="13" stroke-linejoin="round"/>
+      <circle cx="256" cy="292" r="17" fill="url(#${g})"/><path d="M248 298 L242 326 H270 L264 298 Z" fill="url(#${g})"/></g>
+    <circle class="lg-star" cx="256" cy="98" r="7" fill="#ead08f"/></svg>`;
+}
 
 /* ============================================================= accesso Google */
 // Dentro l'app Android (CVNative): accesso con l'account del telefono, senza ID client da incollare.
@@ -732,7 +751,7 @@ function headerHtml(title){
   const sub = idx ? `${idx.images.length.toLocaleString("en-US")} images · updated ${new Date(idx.generated).toLocaleString("en-US", {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"})} by ${esc(idx.machine)}` : "";
   const nf = activeFilterChips().length;
   return `<header class="top">
-    <div class="brand"><img src="icon-192.png" alt=""><h1>${esc(title)}<small>${sub}</small></h1>
+    <div class="brand">${logoSvg(30)}<h1>${esc(title)}<small>${sub}</small></h1>
       <button class="icon-btn" id="refresh" aria-label="Refresh">${ico("refresh")}</button></div>
     <div class="searchrow"><label class="search">${ico("search")}<input id="q" type="search" placeholder="Search: tags, names, colors, -exclude…" value="${esc(S.query)}"></label>
       <button class="icon-btn ${nf ? "on" : ""}" id="filters" aria-label="Filters">${ico("filter")}</button></div>
@@ -749,7 +768,7 @@ function tabsHtml(){
 function render(){
   const app = $("#app");
   if (!clientId() || !localStorage.getItem("cv_logged")) { app.innerHTML = loginHtml(); bindLogin(); return; }
-  if (!S.index) { app.innerHTML = `<div class="login"><img src="icon-192.png" alt=""><h1>Character Vault</h1><p id="msg">Loading archive…</p></div>`; return; }
+  if (!S.index) { app.innerHTML = `<div class="login">${logoSvg(96, "anim")}<h1>Character Vault</h1><p id="msg">Loading archive…</p></div>`; return; }
   const route = parseRoute();
   S.view = route.view;
   if (route.view === "stats") return renderUltimateStats();
@@ -1428,7 +1447,7 @@ function renderSettings(){
 
 /* ----------------------------------------------------------- primo accesso */
 function loginHtml(){
-  return `<div class="login"><img src="icon-192.png" alt=""><h1>Character Vault</h1><p>Your gallery, on your phone.</p>
+  return `<div class="login">${logoSvg(96, "anim")}<h1>Character Vault</h1><p>Your gallery, on your phone.</p>
     ${NATIVE ? "" : `<label>OAuth client ID (Web application)</label><input class="txt" id="lcid" placeholder="123…apps.googleusercontent.com" value="${esc(clientId())}">`}
     <label>Drive archive folder</label><input class="txt" id="lroot" value="${esc(localStorage.getItem("cv_root") || DEFAULT_ROOT)}">
     <button class="btn primary wide" id="lgo" style="margin-top:20px">Sign in with Google</button>
@@ -1475,7 +1494,7 @@ async function start(){
 // Tornando nell'app (o ogni 3 minuti mentre è aperta): se il PC ha pubblicato novità si aggiorna da sola.
 let autoBusy = false;
 async function autoRefresh(force=false){
-  if (autoBusy || !S.index || (!NATIVE && (!S.token || Date.now() > S.tokenExp)) || $("#detail") || $("#fsheet")) return;
+  if (autoBusy || !S.index || (!NATIVE && (!S.token || Date.now() > S.tokenExp)) || $("#detail") || $("#fsheet") || $("#lv") || $("#story")) return;
   autoBusy = true;
   try {
     const previousGeneration = S.index.generated_ts;
@@ -1503,5 +1522,6 @@ restoreToken();
 if (!NATIVE && "serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 window.addEventListener("load", start);
 </script>
+<script src="ui72.js"></script>
 </body>
 </html>

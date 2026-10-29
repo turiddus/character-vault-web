@@ -8,7 +8,11 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.os.SystemClock
+import android.content.pm.ActivityInfo
+import android.view.HapticFeedbackConstants
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -21,6 +25,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.WebViewAssetLoader
 import org.json.JSONObject
 import java.io.File
@@ -35,6 +42,7 @@ class MainActivity : EnglishActivity() {
     companion object {
         private const val ORIGIN = "https://appassets.androidplatform.net"
         private const val START = "$ORIGIN/assets/index.html"
+        private val AUDIO_EXTENSIONS = setOf(".mp3", ".m4a", ".aac", ".ogg", ".oga", ".opus", ".wav", ".flac")
     }
 
     private lateinit var web: WebView
@@ -54,6 +62,7 @@ class MainActivity : EnglishActivity() {
     private val sharedQueue = ArrayList<Uri>()
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var cameraUri: Uri? = null
+    @Volatile private var pageReady = false
 
     private val consent = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
         GoogleAuth.onConsentResult(this, it.data)
@@ -77,6 +86,15 @@ class MainActivity : EnglishActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 7.2: animated Character Vault splash, kept until the page has drawn (at most 2.5 s).
+        val splash = installSplashScreen()
+        val started = SystemClock.uptimeMillis()
+        splash.setKeepOnScreenCondition { !pageReady && SystemClock.uptimeMillis() - started < 2500 }
+        splash.setOnExitAnimationListener { provider ->
+            try {
+                provider.view.animate().alpha(0f).setDuration(260).withEndAction { provider.remove() }.start()
+            } catch (_: Exception) { provider.remove() }
+        }
         super.onCreate(savedInstanceState)
         WebView.setWebContentsDebuggingEnabled(applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0)
         val loader = WebViewAssetLoader.Builder()
@@ -90,7 +108,8 @@ class MainActivity : EnglishActivity() {
             settings.databaseEnabled = true
             settings.allowFileAccess = false
             settings.allowContentAccess = true
-            settings.mediaPlaybackRequiresUserGesture = true
+            // Background music of the stories starts after the user picked it (7.2).
+            settings.mediaPlaybackRequiresUserGesture = false
             addJavascriptInterface(Bridge(), "CVNative")
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
@@ -109,6 +128,9 @@ class MainActivity : EnglishActivity() {
                     }
                     return response
                 }
+                override fun onPageFinished(view: WebView, url: String) {
+                    pageReady = true
+                }
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                     val url = request.url
                     if (url.scheme == "https" && url.host == "appassets.androidplatform.net" &&
@@ -123,7 +145,8 @@ class MainActivity : EnglishActivity() {
                 override fun onShowFileChooser(view: WebView, callback: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
                     fileCallback?.onReceiveValue(null)
                     fileCallback = callback
-                    openChooser(params.isCaptureEnabled, params.mode == FileChooserParams.MODE_OPEN_MULTIPLE)
+                    openChooser(params.isCaptureEnabled, params.mode == FileChooserParams.MODE_OPEN_MULTIPLE,
+                        params.acceptTypes?.toList() ?: emptyList())
                     return true
                 }
             }
@@ -172,7 +195,17 @@ class MainActivity : EnglishActivity() {
     }
 
     // ------------------------------------------------------------------ selezione file e fotocamera
-    private fun openChooser(captureOnly: Boolean, multiple: Boolean) {
+    private fun openChooser(captureOnly: Boolean, multiple: Boolean, acceptTypes: List<String> = emptyList()) {
+        val accept = acceptTypes.flatMap { it.split(',') }.map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+        val audioOnly = accept.isNotEmpty() && accept.all { it.startsWith("audio/") || it in AUDIO_EXTENSIONS }
+        if (audioOnly) {   // background music for the stories: no camera, audio picker
+            val pick = Intent(Intent.ACTION_GET_CONTENT).apply { type = "audio/*"; addCategory(Intent.CATEGORY_OPENABLE) }
+            cameraUri = null
+            try { chooser.launch(Intent.createChooser(pick, "Choose music")) } catch (e: Exception) {
+                fileCallback?.onReceiveValue(null); fileCallback = null; toast("No music picker is available")
+            }
+            return
+        }
         val camera = Intent(MediaStore.ACTION_IMAGE_CAPTURE).also {
             val dir = File(cacheDir, "camera").apply { mkdirs() }
             val file = File(dir, "foto_${System.currentTimeMillis()}.jpg")
@@ -181,9 +214,11 @@ class MainActivity : EnglishActivity() {
             it.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         val intent = if (captureOnly) camera else {
+            val videos = accept.any { it.startsWith("video/") }
             val pick = Intent(Intent.ACTION_GET_CONTENT).apply {
-                type = "image/*"; addCategory(Intent.CATEGORY_OPENABLE)
+                addCategory(Intent.CATEGORY_OPENABLE)
                 putExtra(Intent.EXTRA_ALLOW_MULTIPLE, multiple)
+                if (videos) { type = "*/*"; putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*")) } else type = "image/*"
             }
             Intent.createChooser(pick, "Add images").apply { putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(camera)) }
         }
@@ -309,6 +344,79 @@ class MainActivity : EnglishActivity() {
                 startActivity(Intent(this@MainActivity, VideoActivity::class.java)
                     .putExtra(VideoActivity.EXTRA_FILE_ID, fileId)
                     .putExtra(VideoActivity.EXTRA_TITLE, title ?: "Video"))
+            }
+        }
+
+        /** 7.2: Material You colors of the phone (Android 12+), for the optional "Material You" appearance. */
+        @JavascriptInterface fun theme(): String {
+            if (Build.VERSION.SDK_INT < 31) return "{\"dynamic\":false}"
+            return try {
+                val shades = mapOf(
+                    "a100" to android.R.color.system_accent1_100, "a200" to android.R.color.system_accent1_200,
+                    "a300" to android.R.color.system_accent1_300, "a400" to android.R.color.system_accent1_400,
+                    "a500" to android.R.color.system_accent1_500, "a600" to android.R.color.system_accent1_600,
+                    "a700" to android.R.color.system_accent1_700, "a800" to android.R.color.system_accent1_800,
+                    "a900" to android.R.color.system_accent1_900)
+                val out = JSONObject().put("dynamic", true)
+                for ((key, id) in shades) out.put(key, String.format("#%06X", 0xFFFFFF and getColor(id)))
+                out.toString()
+            } catch (_: Exception) { "{\"dynamic\":false}" }
+        }
+
+        /** 7.2: short vibration for gestures (no permission needed). */
+        @JavascriptInterface fun haptic(kind: String?) {
+            main.post {
+                val effect = when (kind) {
+                    "long" -> HapticFeedbackConstants.LONG_PRESS
+                    "confirm" -> if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+                    else -> HapticFeedbackConstants.CLOCK_TICK
+                }
+                web.performHapticFeedback(effect)
+            }
+        }
+
+        /** 7.2: stories and slideshow — full screen, optional landscape, screen kept on. */
+        @JavascriptInterface fun immersive(on: Boolean, landscape: Boolean) {
+            main.post {
+                val controller = WindowInsetsControllerCompat(window, window.decorView)
+                if (on) {
+                    controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    controller.hide(WindowInsetsCompat.Type.systemBars())
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    requestedOrientation = if (landscape) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                        else ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                } else {
+                    controller.show(WindowInsetsCompat.Type.systemBars())
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                }
+            }
+        }
+
+        /** 7.2: share an archive file with other apps (downloaded to the app cache, shared via FileProvider). */
+        @JavascriptInterface fun shareDriveFile(fileId: String, name: String) {
+            main.post {
+                GoogleAuth.authorize(this@MainActivity, consent, true) { token, error ->
+                    if (token == null) { toast("Google sign-in failed: $error"); return@authorize }
+                    io.execute {
+                        try {
+                            val dir = File(cacheDir, "share").apply { mkdirs(); listFiles()?.forEach { it.delete() } }
+                            val safe = name.replace(Regex("[\\\\/:*?\"<>|]"), "_").ifBlank { "image.jpg" }
+                            val target = File(dir, safe)
+                            val mime = DriveIO.downloadToFile(token, fileId, target).ifBlank { DriveIO.mimeFor(safe) }
+                            val uri = FileProvider.getUriForFile(this@MainActivity, "$packageName.files", target)
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                type = mime; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            main.post { startActivity(Intent.createChooser(send, "Share")) }
+                            js("window.__cvNativeShared && window.__cvNativeShared(${q(fileId)}, true)")
+                        } catch (e: Exception) {
+                            if (e is DriveIO.HttpError && e.code == 401) GoogleAuth.invalidate(this@MainActivity, token)
+                            toast("Sharing failed: ${e.message}")
+                            js("window.__cvNativeShared && window.__cvNativeShared(${q(fileId)}, false)")
+                        }
+                    }
+                }
             }
         }
 

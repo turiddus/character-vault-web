@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt">
+  <aapt:attr name="android:drawable">
+<vector android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+      <path android:name="arch" android:pathData="M37.992 77.736 V54.552 C37.992 43.512 45.996 36.06 54 30.264 C62.004 36.06 70.008 43.512 70.008 54.552 V77.736" android:strokeColor="#FFD4AC62" android:strokeWidth="2.760" android:strokeLineCap="round" android:strokeLineJoin="round" android:trimPathEnd="0"/>
+      <path android:name="arch2" android:pathData="M43.788 77.736 V56.208 C43.788 48.756 48.756 42.96 54 38.958 C59.244 42.96 64.212 48.756 64.212 56.208 V77.736" android:strokeColor="#FFD4AC62" android:strokeAlpha="0.55" android:strokeWidth="0.966" android:strokeLineCap="round" android:strokeLineJoin="round" android:trimPathEnd="0"/>
+      <path android:name="base" android:pathData="M34.128 77.736 H73.872" android:strokeColor="#FFD4AC62" android:strokeWidth="2.760" android:strokeLineCap="round" android:strokeLineJoin="round" android:trimPathEnd="0"/>
+      <group android:name="eye" android:pivotX="54" android:pivotY="62.00" android:scaleX="0.6" android:scaleY="0.6">
+        <path android:name="eyeShape" android:pathData="M44.892 62.004 C49.032 56.208 58.968 56.208 63.108 62.004 C58.968 67.8 49.032 67.8 44.892 62.004 Z" android:fillColor="#FF0D0A10" android:fillAlpha="0" android:strokeColor="#FFD4AC62" android:strokeAlpha="0" android:strokeWidth="1.794" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+        <path android:name="pupil" android:pathData="M51.654,60.900 a2.346,2.346 0 1,0 4.692,0 a2.346,2.346 0 1,0 -4.692,0 Z" android:fillColor="#FFC4364F" android:fillAlpha="0"/>
+        <path android:name="key" android:pathData="M52.896 61.728 L52.068 65.592 H55.932 L55.104 61.728 Z" android:fillColor="#FFC4364F" android:fillAlpha="0"/>
+      </group>
+      <path android:name="star" android:pathData="M53.034,34.128 a0.966,0.966 0 1,0 1.932,0 a0.966,0.966 0 1,0 -1.932,0 Z" android:fillColor="#FFEAD08F" android:fillAlpha="0"/>
+    </vector>
+  </aapt:attr>
+  <target android:name="arch">
+    <aapt:attr name="android:animation">
+      <set>
+        <objectAnimator android:propertyName="trimPathEnd" android:valueFrom="0" android:valueTo="1" android:valueType="floatType" android:duration="650" android:startOffset="0" android:interpolator="@android:interpolator/fast_out_slow_in"/>
+      </set>
+    </aapt:attr>
+  </target>
+  <target android:name="arch2">
+    <aapt:attr name="android:animation">
+      <set>
+        <objectAnimator android:propertyName="trimPathEnd" android:valueFrom="0" android:valueTo="1" android:valueType="floatType" android:duration="550" android:startOffset="150" android:interpolator="@android:interpolator/fast_out_slow_in"/>
+      </set>
+    </aapt:attr>
+  </target>
+  <target android:name="base">
+    <aapt:attr name="android:animation">
+      <set>
+        <objectAnimator android:propertyName="trimPathEnd" android:valueFrom="0" android:valueTo="1" android:valueType="floatType" android:duration="450" android:startOffset="250" android:interpolator="@android:interpolator/fast_out_slow_in"/>
+      </set>
+    </aapt:attr>
+  </target>
+  <target android:name="eye">
+    <aapt:attr name="android:animation">
+      <set>
+        <objectAnimator android:propertyName="scaleX" android:valueFrom="0.6" android:valueTo="1" android:valueType="floatType" android:duration="420" android:startOffset="450" android:interpolator="@android:interpolator/overshoot"/>
+        <objectAnimator android:propertyName="scaleY" android:valueFrom="0.6" android:valueTo="1" android:valueType="floatType" android:duration="420" android:startOffset="450" android:interpolator="@android:interpolator/overshoot"/>
+      </set>
+    </aapt:attr>
+  </target>
+  <target android:name="eyeShape">
+    <aapt:attr name="android:animation">
+      <set>
+        <objectAnimator android:propertyName="fillAlpha" android:valueFrom="0" android:valueTo="1" android:valueType="floatType" android:duration="250" android:startOffset="450" android:interpolator="@android:interpolator/fast_out_slow_in"/>
+        <objectAnimator android:propertyName="strokeAlpha" android:valueFrom="0" android:valueTo="1" android:valueType="floatType" android:duration="250" android:startOffset="450" android:interpolator="@android:interpolator/fast_out_slow_in"/>
+      </set>
+    </aapt:attr>
+  </target>
+  <target android:name="pupil">
+    <aapt:attr name="android:animation">
+      <set>
+        <objectAnimator android:propertyName="fillAlpha" android:valueFrom="0" android:valueTo="1" android:valueType="floatType" android:duration="250" android:startOffset="500" android:interpolator="@android:interpolator/fast_out_slow_in"/>
+      </set>
+    </aapt:attr>
+  </target>
+  <target android:name="key">
+    <aapt:attr name="android:animation">
+      <set>
+        <objectAnimator android:propertyName="fillAlpha" android:valueFrom="0" android:valueTo="1" android:valueType="floatType" android:duration="250" android:startOffset="500" android:interpolator="@android:interpolator/fast_out_slow_in"/>
+      </set>
+    </aapt:attr>
+  </target>
+  <target android:name="star">
+    <aapt:attr name="android:animation">
+      <set>
+        <objectAnimator android:propertyName="fillAlpha" android:valueFrom="0" android:valueTo="1" android:valueType="floatType" android:duration="200" android:startOffset="700" android:interpolator="@android:interpolator/fast_out_slow_in"/>
+      </set>
+    </aapt:attr>
+  </target>
+</animated-vector>

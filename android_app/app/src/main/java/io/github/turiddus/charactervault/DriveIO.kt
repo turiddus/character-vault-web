@@ -120,6 +120,21 @@ object DriveIO {
         return id
     }
 
+    /** 7.2: download a Drive file to a local file (sharing); returns the server MIME type. */
+    fun downloadToFile(token: String, fileId: String, target: java.io.File): String {
+        val conn = (URL("$API/files/$fileId?alt=media&supportsAllDrives=true").openConnection() as HttpURLConnection).apply {
+            connectTimeout = 30000; readTimeout = 300000
+            setRequestProperty("Authorization", "Bearer $token")
+        }
+        try {
+            if (conn.responseCode !in 200..299) fail(conn)
+            val temp = java.io.File(target.parentFile, target.name + ".part")
+            conn.inputStream.use { input -> temp.outputStream().use { input.copyTo(it, 256 * 1024) } }
+            if (!temp.renameTo(target)) throw IOException("cannot write ${target.name}")
+            return conn.contentType?.substringBefore(';')?.trim() ?: ""
+        } finally { conn.disconnect() }
+    }
+
     /** Scarica un file di Drive nella Galleria del telefono (Immagini/CharacterVault). */
     fun downloadToGallery(context: Context, token: String, fileId: String, name: String): Uri {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
