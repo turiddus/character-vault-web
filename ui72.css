@@ -192,3 +192,20 @@ html.cols-fixed .grid .card{border-radius:calc(14px - var(--cols,3) * 1.5px)}
 .gx-dialog p{margin:0 0 14px;font-size:15px;line-height:1.45}
 .gx-dialog .row{justify-content:flex-end;gap:10px}
 .gx-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border);padding:7px 0}
+
+/* 8.2.1 Genesis on the phone */
+.gp-limits{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:8px 0}
+.gp-limits label{display:flex;flex-direction:column;gap:4px;flex:1 1 110px}
+.gp-check{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:14px}
+.gp-progress{margin:10px 0;padding:10px 12px;border-radius:12px;background:var(--bg2, #1d1924);border:1px solid var(--border);animation:cvFade .2s ease-out}
+.gp-uncertain{margin:10px 0;padding:12px;border-radius:12px;border:1px solid #c98a2b;background:rgba(201,138,43,.12)}
+.gp-uncertain p{margin:6px 0 10px}
+.gp-results{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.gp-item{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border);border-radius:14px;padding:8px}
+.gp-item img{width:84px;aspect-ratio:9/16;object-fit:cover;border-radius:10px;background:#000;flex:none}
+.gp-meta{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.gp-meta .row{flex-wrap:wrap;gap:6px}
+.gp-viewer{position:fixed;inset:0;z-index:95;background:#000;display:flex;align-items:center;justify-content:center;animation:cvFade .18s ease-out}
+.gp-viewer img{max-width:100%;max-height:100%;object-fit:contain}
+.gp-viewer .btn{position:absolute;top:calc(12px + var(--safe-t, 0px));right:12px}
+#gp-spec{font-family:ui-monospace,monospace;font-size:12px;line-height:1.4;width:100%;box-sizing:border-box}
