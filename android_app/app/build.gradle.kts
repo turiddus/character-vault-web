@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.util.Base64
 
 plugins {
     id("com.android.application")
@@ -12,6 +13,17 @@ val keystoreProps = Properties().apply {
     if (f.isFile) f.inputStream().use { load(it) }
 }
 
+// Keep compatibility with old keystore.properties, but avoid escaping errors
+// when PowerShell writes signing credentials containing special characters.
+fun signingValue(name: String): String? {
+    if (keystoreProps.getProperty("signingFormat") == "base64-utf8") {
+        val encoded = keystoreProps.getProperty("${name}Base64")
+            ?: throw GradleException("Missing encoded signing field: ${name}Base64")
+        return String(Base64.getDecoder().decode(encoded.trim()), Charsets.UTF_8)
+    }
+    return keystoreProps.getProperty(name)
+}
+
 android {
     namespace = "io.github.turiddus.charactervault"
     compileSdk = 35
@@ -21,8 +33,8 @@ android {
         applicationId = "io.github.turiddus.charactervault"
         minSdk = 28
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.2.0"
+        versionCode = 710
+        versionName = "7.1.0"
         // Solo processori dei telefoni (ARM): l'APK è molto più leggero senza le librerie x86 degli emulatori.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
@@ -31,9 +43,9 @@ android {
         if (keystoreProps.getProperty("storeFile") != null) {
             create("vault") {
                 storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
-                storePassword = keystoreProps.getProperty("storePassword")
-                keyAlias = keystoreProps.getProperty("keyAlias")
-                keyPassword = keystoreProps.getProperty("keyPassword")
+                storePassword = signingValue("storePassword")
+                keyAlias = signingValue("keyAlias")
+                keyPassword = signingValue("keyPassword")
             }
         }
     }
@@ -41,7 +53,9 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.findByName("vault") ?: signingConfigs.getByName("debug")
+            // Never produce a release APK with the wrong/debug signing identity.
+            signingConfig = signingConfigs.findByName("vault")
+                ?: throw GradleException("Release signing is missing. Keep your original keystore.")
         }
         debug {
             signingConfigs.findByName("vault")?.let { signingConfig = it }

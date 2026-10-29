@@ -11,7 +11,6 @@ import android.widget.MediaController
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.VideoView
-import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -21,7 +20,7 @@ import androidx.core.view.WindowInsetsControllerCompat
  * Player video dentro l'app: trasmette il file direttamente da Google Drive (con il token dell'account),
  * senza scaricarlo tutto; si può mettere in pausa e andare avanti/indietro. Usa i decoder del telefono.
  */
-class VideoActivity : ComponentActivity() {
+class VideoActivity : EnglishActivity() {
     companion object {
         const val EXTRA_FILE_ID = "fileId"
         const val EXTRA_TITLE = "title"
@@ -64,7 +63,7 @@ class VideoActivity : ComponentActivity() {
 
     private fun start(fileId: String) {
         GoogleAuth.authorize(this, consent, true) { token, error ->
-            if (token == null) { fail("Accesso a Google non riuscito: $error"); return@authorize }
+            if (token == null) { fail("Google sign-in failed: $error"); return@authorize }
             val controls = MediaController(this).apply { setAnchorView(video) }
             video.setMediaController(controls)
             video.setOnPreparedListener { player ->
@@ -81,8 +80,8 @@ class VideoActivity : ComponentActivity() {
                 controls.show(2500)
             }
             video.setOnErrorListener { _, _, _ ->
-                fail("Il telefono non riesce a riprodurre questo video (codec non supportato o file non raggiungibile).\n\n" +
-                    "Puoi usare «Scarica originale» oppure, sul PC, «Converti MP4» nella sezione Video.")
+                fail("This phone cannot play the video (unsupported codec or unavailable file).\n\n" +
+                    "Use Download original, or Convert to MP4 in the desktop Video section.")
                 true
             }
             video.setOnCompletionListener { controls.show(0) }

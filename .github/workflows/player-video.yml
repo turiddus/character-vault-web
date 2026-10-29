@@ -1,51 +1,61 @@
-name: Prova INSTALLA_PLAYER_VIDEO.bat
+name: Video player installer (Windows)
 on:
   push:
     branches: [android-app]
-    paths: [INSTALLA_PLAYER_VIDEO.bat, .github/workflows/player-video.yml]
+    paths: [INSTALLA_PLAYER_VIDEO.bat, RUN_PYTHON.bat, cv_runtime_entry_v2.py, tools/install_video_player.py, tools/qt_dll_doctor.py, .github/workflows/player-video.yml]
   workflow_dispatch:
 jobs:
   player:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: [con-python, senza-python]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Runtime embedded come quello di Character Vault
+      - name: Character Vault layout with the V2 private runtime (and an old decoy runtime)
         shell: pwsh
         run: |
-          $root = "$env:RUNNER_TEMP\Programmi AI\CharacterVault"
-          New-Item -ItemType Directory -Force "$root\_runtime\python\Lib\site-packages" | Out-Null
+          $root = "$env:RUNNER_TEMP\Programmi & AI\CharacterVault"
+          $v2 = "$root\_runtime_v2\python"; $old = "$root\_runtime\python"
+          New-Item -ItemType Directory -Force "$v2\Lib\site-packages", "$old\Lib\site-packages", "$root\tools" | Out-Null
           Invoke-WebRequest https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip -OutFile emb.zip
-          Expand-Archive emb.zip "$root\_runtime\python" -Force
-          Set-Content -Encoding ascii "$root\_runtime\python\python311._pth" "python311.zip`n.`nLib/site-packages`n$root`nimport site`n"
+          Expand-Archive emb.zip $v2 -Force; Expand-Archive emb.zip $old -Force
+          foreach ($p in @($v2, $old)) { Set-Content -Encoding ascii "$p\python311._pth" "python311.zip`n.`nLib/site-packages`n..\..`nimport site`n" }
           python -m pip download PySide6-Essentials==6.10.1 shiboken6==6.10.1 --no-deps --only-binary=:all: --platform win_amd64 --python-version 3.11 -d wh -q
           Add-Type -AssemblyName System.IO.Compression.FileSystem
-          Get-ChildItem wh\*.whl | ForEach-Object { $z=[IO.Compression.ZipFile]::OpenRead($_.FullName); foreach($e in $z.Entries){ if($e.FullName.EndsWith('/')){continue}; $t=Join-Path "$root\_runtime\python\Lib\site-packages" $e.FullName; New-Item -ItemType Directory -Force (Split-Path $t) | Out-Null; [IO.Compression.ZipFileExtensions]::ExtractToFile($e,$t,$true) }; $z.Dispose() }
-          Copy-Item INSTALLA_PLAYER_VIDEO.bat $root
-          & "$root\_runtime\python\python.exe" -c "import PySide6; print('runtime PySide6', PySide6.__version__)"
-          & "$root\_runtime\python\python.exe" -m pip --version 2>&1 | Select-Object -First 1
+          Get-ChildItem wh\*.whl | ForEach-Object { $z=[IO.Compression.ZipFile]::OpenRead($_.FullName); foreach($e in $z.Entries){ if($e.FullName.EndsWith('/')){continue}; $t=Join-Path "$v2\Lib\site-packages" $e.FullName; New-Item -ItemType Directory -Force (Split-Path $t) | Out-Null; [IO.Compression.ZipFileExtensions]::ExtractToFile($e,$t,$true) }; $z.Dispose() }
+          Set-Content -Encoding utf8 "$root\CV_RUNTIME_V2.json" '{"interpreter": "_runtime_v2/python/python.exe"}'
+          Copy-Item INSTALLA_PLAYER_VIDEO.bat, RUN_PYTHON.bat, cv_runtime_entry_v2.py $root
+          Copy-Item tools\install_video_player.py, tools\qt_dll_doctor.py "$root\tools"
+          & "$v2\python.exe" -c "import PySide6; print('V2 runtime PySide6', PySide6.__version__)"
           "CVROOT=$root" | Out-File -Append $env:GITHUB_ENV
-      - name: Esegui il BAT
+      - name: Install the player (twice)
         shell: cmd
         run: |
-          if "${{ matrix.mode }}"=="senza-python" set "PATH=%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\WindowsPowerShell\v1.0"
-          if "${{ matrix.mode }}"=="senza-python" del /f /q "%SystemRoot%\py.exe" "%SystemRoot%\pyw.exe" 2>nul
-          if "${{ matrix.mode }}"=="senza-python" (where python 2>nul && exit /b 1) || echo nessun python nel PATH
-          if "${{ matrix.mode }}"=="senza-python" (where py 2>nul && exit /b 1) || echo nessun py nel PATH
           cd /d "%CVROOT%"
           echo.| call INSTALLA_PLAYER_VIDEO.bat > "%GITHUB_WORKSPACE%\player.log" 2>&1
           type "%GITHUB_WORKSPACE%\player.log"
-          "%CVROOT%\_runtime\python\python.exe" -c "import PySide6.QtMultimedia as m, PySide6.QtMultimediaWidgets; from PySide6 import QtCore; print('QtMultimedia OK', QtCore.qVersion())" || exit /b 1
-          findstr /c:"FATTO" "%GITHUB_WORKSPACE%\player.log" || exit /b 1
+          "%CVROOT%\_runtime_v2\python\python.exe" -c "import PySide6.QtMultimedia, PySide6.QtMultimediaWidgets; print('QtMultimedia import OK in V2 runtime')" || exit /b 1
+          if exist "%CVROOT%\_runtime\python\Lib\site-packages\PySide6" exit /b 1
+          findstr /r /c:"FATTO" /c:"ATTENZIONE" "%GITHUB_WORKSPACE%\player.log" || exit /b 1
           echo.| call INSTALLA_PLAYER_VIDEO.bat > "%GITHUB_WORKSPACE%\player2.log" 2>&1
-          findstr /c:"gia' installato" "%GITHUB_WORKSPACE%\player2.log" || exit /b 1
+          type "%GITHUB_WORKSPACE%\player2.log"
+          findstr /r /c:"gia' installato" /c:"ATTENZIONE" "%GITHUB_WORKSPACE%\player2.log" || exit /b 1
+          echo.| call INSTALLA_PLAYER_VIDEO.bat --diagnose > "%GITHUB_WORKSPACE%\diagnose.log" 2>&1
+          type "%GITHUB_WORKSPACE%\diagnose.log"
+      - name: The doctor names a missing DLL
+        shell: cmd
+        run: |
+          xcopy /e /i /q "%CVROOT%\_runtime_v2" "%RUNNER_TEMP%\broken\_runtime_v2" >nul
+          del "%RUNNER_TEMP%\broken\_runtime_v2\python\Lib\site-packages\PySide6\Qt6Network.dll"
+          "%RUNNER_TEMP%\broken\_runtime_v2\python\python.exe" "%CVROOT%\tools\qt_dll_doctor.py" > "%GITHUB_WORKSPACE%\doctor.log" 2>&1
+          type "%GITHUB_WORKSPACE%\doctor.log"
+          findstr /c:"[MISSING] Qt6Network.dll" "%GITHUB_WORKSPACE%\doctor.log" || exit /b 1
+          "%RUNNER_TEMP%\broken\_runtime_v2\python\python.exe" -c "import PySide6.QtMultimedia" > "%GITHUB_WORKSPACE%\import_error.log" 2>&1
+          type "%GITHUB_WORKSPACE%\import_error.log"
       - name: Report
         if: always()
         shell: bash
         run: |
-          [ -f player.log ] && echo "::notice title=${{ matrix.mode }}::$(sed ':a;N;$!ba;s/\n/%0A/g' player.log | cut -c1-2500)"
+          for f in player.log player2.log diagnose.log doctor.log import_error.log; do [ -f $f ] || continue
+            echo "::notice title=$f::$(sed ':a;N;$!ba;s/\n/%0A/g' $f | cut -c1-3000)"
+          done

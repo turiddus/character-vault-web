@@ -12,7 +12,7 @@ import com.google.android.gms.common.api.Scope
 import java.util.concurrent.Executors
 
 /**
- * Accesso a Google Drive con l'account del telefono (Google Identity Services, AuthorizationClient).
+ * Sign in to Google Drive con l'account del telefono (Google Identity Services, AuthorizationClient).
  * Nessun ID client da incollare: Google riconosce l'app dal nome del pacchetto e dall'impronta SHA-1 della firma,
  * registrati una volta in Google Cloud come client OAuth «Android». Il token dura circa un'ora e viene
  * rinnovato in silenzio quando serve.
@@ -46,7 +46,7 @@ object GoogleAuth {
                     } else cb(null, "consent_required")
                 } else store(result.accessToken, cb)
             }
-            .addOnFailureListener { cb(null, it.message ?: "accesso non riuscito") }
+            .addOnFailureListener { cb(null, it.message ?: "sign-in failed") }
     }
 
     /** Risultato della schermata di consenso (da chiamare nel callback del launcher). */
@@ -57,7 +57,7 @@ object GoogleAuth {
             val result = Identity.getAuthorizationClient(activity).getAuthorizationResultFromIntent(data)
             store(result.accessToken, cb)
         } catch (e: Exception) {
-            cb(null, e.message ?: "accesso annullato")
+            cb(null, e.message ?: "sign-in canceled")
         }
     }
 

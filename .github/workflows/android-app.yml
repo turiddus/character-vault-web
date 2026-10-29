@@ -2,6 +2,7 @@ name: Character Vault Android APK
 on:
   push:
     branches: [android-app]
+    paths-ignore: [INSTALLA_PLAYER_VIDEO.bat, tools/install_video_player.py, tools/qt_dll_doctor.py, .github/workflows/player-video.yml]
   workflow_dispatch:
 jobs:
   build:
@@ -22,57 +23,72 @@ jobs:
           chmod +x gradlew
           set -o pipefail
           ./gradlew --no-daemon --stacktrace assembleRelease 2>&1 | tee build.log
-      - name: Verifica APK
+      - name: Verify APK
         run: |
           APK=android_app/app/build/outputs/apk/release/app-release.apk
           BT=$(ls -d $ANDROID_HOME/build-tools/35.* | tail -1)
-          size=$(du -h "$APK" | cut -f1)
-          assets=$(unzip -l "$APK" | grep -cE "assets/(index.html|icon-192.png|manifest.webmanifest)")
-          badge=$("$BT/aapt" dump badging "$APK" | grep -E "^package:|^sdkVersion|^targetSdkVersion|uses-permission" | tr '\n' ' ')
-          signer=$("$BT/apksigner" verify --print-certs "$APK" | grep -m1 "SHA-1" || true)
+          badge=$("$BT/aapt" dump badging "$APK")
+          echo "$badge" | grep -q "versionCode='710'" || { echo "::error::versionCode is not 710"; exit 1; }
+          echo "$badge" | grep -q "application-icon-160:'res/mipmap" || { echo "::error::launcher icon missing"; exit 1; }
+          for f in index.html icon-192.png icon-512.png manifest.webmanifest sw.js; do
+            unzip -l "$APK" | grep -q "assets/$f" || { echo "::error::assets/$f missing"; exit 1; }
+          done
           intents=$("$BT/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -cE "android.intent.action.SEND" || true)
-          echo "::notice title=APK::dim=$size | file interfaccia=$assets/3 | azioni condividi=$intents | $badge | firma $signer"
+          signer=$("$BT/apksigner" verify --print-certs "$APK" | grep -m1 "SHA-1" || true)
+          size=$(du -h "$APK" | cut -f1)
+          pkg=$(echo "$badge" | grep -E "^package:|^sdkVersion|^targetSdkVersion" | tr '\n' ' ')
+          echo "::notice title=APK::size=$size | share intents=$intents | $pkg | signer $signer"
       - name: Report errors
         if: failure()
         run: |
           cd android_app
-          grep -nE "^e: |error:|What went wrong|Could not|Execution failed|Caused by|^> |Unresolved|Type mismatch" build.log | head -45 > errors.txt || true
+          grep -nE "^e: |^w: .*CropActivity|error:|What went wrong|Could not|Execution failed|Caused by|^> |Unresolved|Type mismatch" build.log | head -45 > errors.txt || true
           msg=$(sed ':a;N;$!ba;s/\n/%0A/g' errors.txt | cut -c1-3800)
           echo "::error title=Gradle::${msg}"
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: CharacterVault-apk
+          name: CharacterVault-apk-ci-signed
           path: android_app/app/build/outputs/apk/release/*.apk
 
-  # Prova reale del BAT per Windows su una macchina pulita: scarica Java, Android SDK e Gradle e crea l'APK.
+  # BUILD_ANDROID_APK.bat on a clean Windows machine, from a path with "&", spaces and a long name,
+  # with an EXISTING signing key (as on the user's PC): downloads Java, Android SDK and Gradle.
   bat-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Esegui COMPILA_APK_ANDROID.bat da un percorso con "&", spazi e molto lungo
+      - name: Run BUILD_ANDROID_APK.bat
         shell: cmd
         run: |
-          set "DEST=%RUNNER_TEMP%\Users\Salvatore&Annalisa\Downloads\CharacterVault_5.0.1_sorgente\CharacterVault_5.0.1"
+          set "DEST=%RUNNER_TEMP%\Users\Salvatore&Annalisa\Downloads\CharacterVault_7.1.0_sorgente\CharacterVault_7.1.0"
           robocopy . "%DEST%" /E /XD .git /NFL /NDL /NJH /NJS /NP >nul
+          "%JAVA_HOME_17_X64%\bin\keytool.exe" -genkeypair -keystore "%DEST%\android_app\charactervault.jks" -alias vault -storepass "old&Pass!1" -keypass "old&Pass!1" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Character Vault CI" >nul 2>&1
+          > "%DEST%\android_app\keystore.properties" (
+            echo storeFile=charactervault.jks
+            echo storePassword=old^&Pass!1
+            echo keyAlias=vault
+            echo keyPassword=old^&Pass!1
+          )
+          type "%DEST%\android_app\keystore.properties"
           cd /d "%DEST%"
           set JAVA_HOME=
           set ANDROID_HOME=
           set ANDROID_SDK_ROOT=
-          echo.| call COMPILA_APK_ANDROID.bat > "%GITHUB_WORKSPACE%\bat.log" 2>&1
+          set "CV_BUILD_DIR=%RUNNER_TEMP%\CVBuild"
+          echo.| call BUILD_ANDROID_APK.bat > "%GITHUB_WORKSPACE%\bat.log" 2>&1
           type "%GITHUB_WORKSPACE%\bat.log"
           if not exist CharacterVault.apk exit /b 1
-          if not exist android_app\charactervault.jks exit /b 1
-          type SHA1_ANDROID.txt
-          echo --- seconda esecuzione (strumenti gia' presenti)
-          echo.| call COMPILA_APK_ANDROID.bat > "%GITHUB_WORKSPACE%\bat2.log" 2>&1
-          findstr /c:"APK pronto" "%GITHUB_WORKSPACE%\bat2.log" || exit /b 1
-      - name: Report errors
-        if: failure()
+          findstr /c:"APK ready" "%GITHUB_WORKSPACE%\bat.log" || exit /b 1
+          echo --- second run (tools already present)
+          echo.| call BUILD_ANDROID_APK.bat > "%GITHUB_WORKSPACE%\bat2.log" 2>&1
+          findstr /c:"APK ready" "%GITHUB_WORKSPACE%\bat2.log" || exit /b 1
+      - name: Report
+        if: always()
         shell: bash
         run: |
           for f in bat.log bat2.log; do [ -f $f ] || continue
-            msg=$(grep -nE "ERRORE|error|FAILURE|What went wrong|Could not|e: |nicht|not found|cannot" $f | head -40 | sed ':a;N;$!ba;s/\n/%0A/g' | cut -c1-3800)
-            echo "::error title=$f::${msg:-nessun dettaglio}"
-            echo "::error title=$f tail::$(tail -c 2500 $f | sed ':a;N;$!ba;s/\n/%0A/g')"
+            echo "::notice title=$f tail::$(tail -c 2500 $f | sed ':a;N;$!ba;s/\n/%0A/g')"
+            msg=$(grep -nE "ERROR|error|FAILURE|What went wrong|Could not|e: |not found|cannot" $f | head -30 | sed ':a;N;$!ba;s/\n/%0A/g' | cut -c1-3800)
+            [ -n "$msg" ] && echo "::warning title=$f matches::${msg}"
           done
+          true

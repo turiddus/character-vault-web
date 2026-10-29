@@ -31,7 +31,7 @@ import java.util.concurrent.Executors
  * Google Drive) con le parti native che il browser non offre: accesso Google con l'account del telefono, download
  * nella Galleria, «Condividi» da altre app, fotocamera e ritaglio in medium close-up con rilevamento dei volti.
  */
-class MainActivity : ComponentActivity() {
+class MainActivity : EnglishActivity() {
     companion object {
         private const val ORIGIN = "https://appassets.androidplatform.net"
         private const val START = "$ORIGIN/assets/index.html"
@@ -39,6 +39,15 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var web: WebView
     private val main = Handler(Looper.getMainLooper())
+    // Android WebView may not emit a visibilitychange event when an Activity
+    // resumes. Poll only while the app is in the foreground, without a service
+    // or background access to Drive.
+    private val syncEvery40Seconds = object : Runnable {
+        override fun run() {
+            if (jsReady) js("window.__cvAutoSyncFromAndroid && window.__cvAutoSyncFromAndroid(false)")
+            main.postDelayed(this, 40_000L)
+        }
+    }
     private val io = Executors.newFixedThreadPool(2)
     private var inbox = ""
     private var jsReady = false
@@ -84,12 +93,28 @@ class MainActivity : ComponentActivity() {
             settings.mediaPlaybackRequiresUserGesture = true
             addJavascriptInterface(Bridge(), "CVNative")
             webViewClient = object : WebViewClient() {
-                override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
-                    loader.shouldInterceptRequest(request.url)
+                override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+                    val response = loader.shouldInterceptRequest(request.url)
+                    if (response != null) {
+                        // The native bridge is available only to the bundled page.
+                        // Remote scripts and frames must never receive bridge access.
+                        response.responseHeaders = (response.responseHeaders ?: emptyMap()) + mapOf(
+                            "Content-Security-Policy" to "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
+                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                                "font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; " +
+                                "media-src 'self' blob: https://www.googleapis.com; " +
+                                "connect-src 'self' https://www.googleapis.com; frame-src 'none'; " +
+                                "object-src 'none'; base-uri 'none'"
+                        )
+                    }
+                    return response
+                }
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                     val url = request.url
-                    if (url.toString().startsWith(ORIGIN)) return false
-                    // Link esterni (es. «Apri su Drive»): nell'app Drive o nel browser.
+                    if (url.scheme == "https" && url.host == "appassets.androidplatform.net" &&
+                        (url.port == -1 || url.port == 443)) return false
+                    if (!request.isForMainFrame || url.scheme !in listOf("https", "http")) return true
+                    // Link esterni (es. «Open su Drive»): nell'app Drive o nel browser.
                     try { startActivity(Intent(Intent.ACTION_VIEW, url)) } catch (_: Exception) { }
                     return true
                 }
@@ -113,6 +138,20 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState != null) web.restoreState(savedInstanceState) else web.loadUrl(START)
     }
 
+    override fun onResume() {
+        super.onResume()
+        main.removeCallbacks(syncEvery40Seconds)
+        // On return from Home, another app or the cropper, check Drive now.
+        // The initial launch already loads the index in start().
+        if (jsReady) js("window.__cvAutoSyncFromAndroid && window.__cvAutoSyncFromAndroid(true)")
+        main.postDelayed(syncEvery40Seconds, 40_000L)
+    }
+
+    override fun onPause() {
+        main.removeCallbacks(syncEvery40Seconds)
+        super.onPause()
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         web.saveState(outState)
@@ -125,6 +164,9 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        io.shutdownNow()
+        fileCallback?.onReceiveValue(null)
+        fileCallback = null
         web.destroy()
         super.onDestroy()
     }
@@ -143,11 +185,11 @@ class MainActivity : ComponentActivity() {
                 type = "image/*"; addCategory(Intent.CATEGORY_OPENABLE)
                 putExtra(Intent.EXTRA_ALLOW_MULTIPLE, multiple)
             }
-            Intent.createChooser(pick, "Aggiungi immagini").apply { putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(camera)) }
+            Intent.createChooser(pick, "Add images").apply { putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(camera)) }
         }
         try { chooser.launch(intent) } catch (e: Exception) {
             fileCallback?.onReceiveValue(null); fileCallback = null
-            toast("Nessuna app per scegliere le immagini")
+            toast("No photo picker is available")
         }
     }
 
@@ -174,7 +216,7 @@ class MainActivity : ComponentActivity() {
     private fun processShared() {
         if (sharedQueue.isEmpty() || !jsReady) return
         if (inbox.isEmpty()) {
-            toast("Sul PC imposta la cartella Drive di origine (Importa › Google Drive), poi riprova a condividere.")
+            toast("Set the Drive source folder on the desktop (Import › Google Drive), then try sharing again.")
             sharedQueue.clear(); return
         }
         val all = ArrayList(sharedQueue)
@@ -187,22 +229,25 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun uploadVideos(videos: List<Uri>) {
-        toast("Invio di ${videos.size} video a Character Vault…")
+        toast("Uploading ${videos.size} videos to Character Vault…")
         GoogleAuth.authorize(this, consent, true) { token, error ->
-            if (token == null) { toast("Accesso a Google non riuscito: $error"); return@authorize }
+            if (token == null) { toast("Google sign-in failed: $error"); return@authorize }
             io.execute {
                 var sent = 0
                 for (uri in videos) {
                     try {
                         val name = displayName(uri) ?: "video_${System.currentTimeMillis()}.mp4"
                         val length = contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
-                        if (length <= 0) throw java.io.IOException("dimensione del video sconosciuta")
-                        DriveIO.upload(token, inbox, name, contentResolver.getType(uri) ?: "video/mp4", length,
-                            { contentResolver.openInputStream(uri)!! })
+                        if (length <= 0) throw java.io.IOException("unknown video size")
+                        DriveIO.retrying {
+                            DriveIO.upload(token, inbox, name, contentResolver.getType(uri) ?: "video/mp4", length,
+                                { contentResolver.openInputStream(uri) ?: throw java.io.IOException("video not readable") },
+                                properties = mapOf("cv_origin" to "android"))
+                        }
                         sent++
                     } catch (e: Exception) {
                         if (e is DriveIO.HttpError && e.code == 401) GoogleAuth.invalidate(this, token)
-                        toast("Video non inviato: ${e.message}")
+                        toast("Video upload failed: ${e.message}")
                     }
                 }
                 if (sent > 0) js("window.__cvNativeUploaded && window.__cvNativeUploaded($sent)")
@@ -217,7 +262,7 @@ class MainActivity : ComponentActivity() {
     } catch (_: Exception) { null }
 
     private fun openCropper(uris: ArrayList<Uri>?) {
-        if (inbox.isEmpty()) { toast("Archivio non ancora caricato: attendi qualche secondo."); return }
+        if (inbox.isEmpty()) { toast("The archive is still loading. Wait a few seconds."); return }
         val i = Intent(this, CropActivity::class.java).putExtra(CropActivity.EXTRA_INBOX, inbox)
         if (!uris.isNullOrEmpty()) {
             i.putParcelableArrayListExtra(CropActivity.EXTRA_URIS, uris)
@@ -271,15 +316,15 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface fun saveDriveFile(fileId: String, name: String) {
             main.post {
                 GoogleAuth.authorize(this@MainActivity, consent, true) { token, error ->
-                    if (token == null) { toast("Accesso a Google non riuscito: $error"); return@authorize }
+                    if (token == null) { toast("Google sign-in failed: $error"); return@authorize }
                     io.execute {
                         try {
                             DriveIO.downloadToGallery(this@MainActivity, token, fileId, name)
-                            toast("Salvata in Galleria › CharacterVault")
+                            toast("Saved to Gallery › CharacterVault")
                             js("window.__cvNativeSaved && window.__cvNativeSaved(${q(fileId)}, true)")
                         } catch (e: Exception) {
                             if (e is DriveIO.HttpError && e.code == 401) GoogleAuth.invalidate(this@MainActivity, token)
-                            toast("Download non riuscito: ${e.message}")
+                            toast("Download failed: ${e.message}")
                             js("window.__cvNativeSaved && window.__cvNativeSaved(${q(fileId)}, false)")
                         }
                     }

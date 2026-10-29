@@ -22,7 +22,6 @@ import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
@@ -33,16 +32,21 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * Ritaglio e invio alla galleria: per ogni foto propone il medium close-up (testa, spalle e busto) trovando il volto
- * sul telefono con ML Kit, offline; puoi spostare/ridimensionare il riquadro, cambiare formato o caricare la foto intera.
- * Le foto vanno nella cartella Drive di origine: il PC le importa e le cataloga come tutte le altre.
+ * Upload to the gallery with a cover crop (7.1).
+ *
+ * The FULL ORIGINAL file is always uploaded to the Drive inbox, byte for byte (formats the desktop cannot read,
+ * such as HEIC, are converted to a full-resolution JPEG). The frame chosen here, proposed as a medium close-up
+ * with on-device ML Kit face detection, travels with the file as the Drive property `cv_crop`
+ * ("left,top,right,bottom", normalised to the EXIF-oriented image). The desktop imports the original and uses
+ * the frame only as the gallery cover, exactly like a crop chosen on the desktop.
  */
-class CropActivity : ComponentActivity() {
+class CropActivity : EnglishActivity() {
     companion object {
         const val EXTRA_INBOX = "inbox"
         const val EXTRA_URIS = "uris"
         const val EXTRA_UPLOADED = "uploaded"
-        private const val MAX_SIDE = 4096
+        private const val MAX_SIDE = 4096          // preview bitmap for framing only, never uploaded
+        private const val MAX_CONVERT_SIDE = 6144  // HEIC/DNG/AVIF converted to JPEG for the desktop
     }
 
     private val ui = Handler(Looper.getMainLooper())
@@ -102,7 +106,7 @@ class CropActivity : ComponentActivity() {
         }
         status = TextView(this).apply {
             setTextColor(getColor(R.color.text)); textSize = 16f; typeface = Typeface.DEFAULT_BOLD
-            text = "Ritaglia e aggiungi alla galleria"
+            text = "Upload to the gallery"
         }
         root.addView(status)
         progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply { max = 100; visibility = View.INVISIBLE }
@@ -118,22 +122,27 @@ class CropActivity : ComponentActivity() {
         }
         root.addView(ratios)
 
+        val hint = TextView(this).apply {
+            text = "The full original is uploaded. The frame is only the gallery cover."
+            setTextColor(getColor(R.color.text2)); textSize = 12f
+        }
+        root.addView(hint)
         keepCopy = CheckBox(this).apply {
-            text = "Salva anche una copia ritagliata nella Galleria del telefono"
+            text = "Also save a cropped copy to your phone gallery"
             setTextColor(getColor(R.color.text2)); textSize = 13f
         }
         root.addView(keepCopy)
 
         val row1 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
         val auto = styled(Button(this)).apply { text = "Medium close-up"; setOnClickListener { autoFrame(true) } }
-        val skip = styled(Button(this)).apply { text = "Salta"; setOnClickListener { next() } }
+        val skip = styled(Button(this)).apply { text = "Skip"; setOnClickListener { next() } }
         row1.addView(auto, LinearLayout.LayoutParams(0, -2, 1.4f).apply { marginEnd = dp(6) })
         row1.addView(skip, LinearLayout.LayoutParams(0, -2, 1f))
         root.addView(row1, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
 
         val row2 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        val whole = styled(Button(this)).apply { text = "Carica intera"; setOnClickListener { send(false) } }
-        val cropped = styled(Button(this), primary = true).apply { text = "Ritaglia e carica"; setOnClickListener { send(true) } }
+        val whole = styled(Button(this)).apply { text = "Upload, automatic cover"; setOnClickListener { send(false) } }
+        val cropped = styled(Button(this), primary = true).apply { text = "Upload with this cover"; setOnClickListener { send(true) } }
         row2.addView(whole, LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = dp(6) })
         row2.addView(cropped, LinearLayout.LayoutParams(0, -2, 1.4f))
         root.addView(row2, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
@@ -161,19 +170,19 @@ class CropActivity : ComponentActivity() {
         progress.visibility = if (value) View.VISIBLE else View.INVISIBLE
     }
 
-    // ------------------------------------------------------------------ immagini
+    // ------------------------------------------------------------------ images
     private fun displayName(uri: Uri): String {
         try {
             contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
                 if (c.moveToFirst()) c.getString(0)?.let { if (it.isNotBlank()) return it }
             }
         } catch (_: Exception) { }
-        return "foto_${System.currentTimeMillis()}.jpg"
+        return "photo_${System.currentTimeMillis()}.jpg"
     }
 
     private fun load() {
         if (index >= images.size) { finishWithResult(); return }
-        status.text = "Foto ${index + 1} di ${images.size} · ricerca del volto…"
+        status.text = "Photo ${index + 1} of ${images.size} · detecting faces…"
         faceBox = null
         setBusy(true)
         val uri = images[index]
@@ -194,7 +203,7 @@ class CropActivity : ComponentActivity() {
                     detectFace(bmp)
                 }
             } catch (e: Exception) {
-                ui.post { setBusy(false); status.text = "Foto non leggibile (${e.message}): passo alla successiva"; next() }
+                ui.post { setBusy(false); status.text = "Unreadable photo (${e.message}): moving to the next one"; next() }
             }
         }
     }
@@ -219,10 +228,10 @@ class CropActivity : ComponentActivity() {
     private fun autoFrame(fromButton: Boolean) {
         val bmp = crop.bitmap ?: return
         val f = faceBox
-        val label = "Foto ${index + 1} di ${images.size}"
+        val label = "Photo ${index + 1} of ${images.size}"
         if (f == null) {
             crop.centered()
-            status.text = "$label · nessun volto trovato: sposta il riquadro a mano"
+            status.text = "$label · no face found: adjust the frame manually"
             return
         }
         val r = crop.ratio
@@ -231,7 +240,7 @@ class CropActivity : ComponentActivity() {
         val height = (fh * factor).coerceAtMost(bmp.height.toFloat())
         val top = f.top - fh * 0.62f
         crop.setBox(f.exactCenterX(), top + height / 2f, height)
-        status.text = if (fromButton) "$label · medium close-up" else "$label · volto trovato: medium close-up proposto"
+        status.text = if (fromButton) "$label · medium close-up" else "$label · face found: medium close-up suggested"
     }
 
     private fun next() {
@@ -240,42 +249,82 @@ class CropActivity : ComponentActivity() {
     }
 
     // ------------------------------------------------------------------ invio
-    private fun send(cropped: Boolean) {
+    /** Payload actually uploaded: the untouched original, or a full-resolution JPEG for formats the desktop lacks. */
+    private class Payload(val name: String, val mime: String, val length: Long, val open: () -> java.io.InputStream)
+
+    private fun payload(uri: Uri): Payload {
+        val name = displayName(uri)
+        val mime = contentResolver.getType(uri) ?: DriveIO.mimeFor(name)
+        if (DriveIO.desktopReadsAsIs(name, mime)) {
+            val length = try { contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L } catch (_: Exception) { -1L }
+            if (length > 0) return Payload(name, mime, length) { contentResolver.openInputStream(uri) ?: throw java.io.IOException("photo not readable") }
+            val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: throw java.io.IOException("photo not readable")
+            return Payload(name, mime, bytes.size.toLong()) { bytes.inputStream() }
+        }
+        // HEIC/HEIF, DNG, AVIF...: full-resolution JPEG (orientation applied), so the desktop can import it.
+        val full = ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri)) { decoder, info, _ ->
+            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            val long = max(info.size.width, info.size.height)
+            if (long > MAX_CONVERT_SIDE) {
+                val f = MAX_CONVERT_SIDE.toFloat() / long
+                decoder.setTargetSize((info.size.width * f).roundToInt(), (info.size.height * f).roundToInt())
+            }
+        }
+        val bytes = ByteArrayOutputStream().use { s -> full.compress(Bitmap.CompressFormat.JPEG, 95, s); s.toByteArray() }
+        full.recycle()
+        return Payload(name.substringBeforeLast('.') + ".jpg", "image/jpeg", bytes.size.toLong()) { bytes.inputStream() }
+    }
+
+    private var renewedSession = false
+
+    private fun send(withCover: Boolean) {
         if (busy) return
-        if (inbox.isEmpty()) { status.text = "Cartella Drive di origine non configurata sul PC"; return }
+        if (inbox.isEmpty()) { status.text = "The desktop Drive source folder is not configured"; return }
         val uri = images.getOrNull(index) ?: return
         val bmp = crop.bitmap
         val r = crop.rect
-        if (cropped && (bmp == null || r == null)) return
+        if (withCover && (bmp == null || r == null)) return
+        // Frame normalised to the oriented image: identical on the full-resolution original.
+        val cover: String? = if (withCover && bmp != null && r != null) {
+            val w = bmp.width.toFloat(); val h = bmp.height.toFloat()
+            listOf(r.left / w, r.top / h, r.right / w, r.bottom / h)
+                .joinToString(",") { String.format(java.util.Locale.US, "%.5f", it.coerceIn(0f, 1f)) }
+        } else null
+        val croppedCopy: ByteArray? = if (withCover && keepCopy.isChecked && bmp != null && r != null) {
+            val x = r.left.roundToInt().coerceIn(0, bmp.width - 1)
+            val y = r.top.roundToInt().coerceIn(0, bmp.height - 1)
+            val cw = r.width().roundToInt().coerceIn(1, bmp.width - x)
+            val ch = r.height().roundToInt().coerceIn(1, bmp.height - y)
+            val out = Bitmap.createBitmap(bmp, x, y, cw, ch)
+            ByteArrayOutputStream().use { s -> out.compress(Bitmap.CompressFormat.JPEG, 92, s); s.toByteArray() }
+        } else null
         setBusy(true)
-        status.text = "Foto ${index + 1} di ${images.size} · invio a Drive…"
+        status.text = "Photo ${index + 1} of ${images.size} · uploading the original to Drive…"
         GoogleAuth.authorize(this, consent, true) { token, error ->
-            if (token == null) { setBusy(false); status.text = "Accesso a Google non riuscito: $error"; return@authorize }
-            val original = displayName(uri)
-            val saveCopy = keepCopy.isChecked
+            if (token == null) { setBusy(false); status.text = "Google sign-in failed: $error"; return@authorize }
             io.execute {
                 try {
-                    if (cropped) {
-                        val x = r!!.left.roundToInt().coerceIn(0, bmp!!.width - 1)
-                        val y = r.top.roundToInt().coerceIn(0, bmp.height - 1)
-                        val w = r.width().roundToInt().coerceIn(1, bmp.width - x)
-                        val h = r.height().roundToInt().coerceIn(1, bmp.height - y)
-                        val out = Bitmap.createBitmap(bmp, x, y, w, h)
-                        val bytes = ByteArrayOutputStream().use { s -> out.compress(Bitmap.CompressFormat.JPEG, 95, s); s.toByteArray() }
-                        val name = original.substringBeforeLast('.') + "_ritaglio.jpg"
-                        DriveIO.upload(token, inbox, name, "image/jpeg", bytes.size.toLong(), { bytes.inputStream() }) { p -> ui.post { progress.progress = (p * 100).roundToInt() } }
-                        if (saveCopy) saveToGallery(name, bytes)
-                    } else {
-                        val length = contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
-                        val bytes: ByteArray? = if (length <= 0) contentResolver.openInputStream(uri)!!.use { it.readBytes() } else null
-                        val size = bytes?.size?.toLong() ?: length
-                        DriveIO.upload(token, inbox, original, contentResolver.getType(uri) ?: DriveIO.mimeFor(original), size,
-                            { bytes?.inputStream() ?: contentResolver.openInputStream(uri)!! }) { p -> ui.post { progress.progress = (p * 100).roundToInt() } }
+                    val file = payload(uri)
+                    val properties = LinkedHashMap<String, String>()
+                    properties["cv_origin"] = "android"
+                    if (cover != null) { properties["cv_crop"] = cover; properties["cv_crop_v"] = "1" }
+                    DriveIO.retrying {
+                        DriveIO.upload(token, inbox, file.name, file.mime, file.length, file.open,
+                            { p -> ui.post { progress.progress = (p * 100).roundToInt() } }, properties)
                     }
-                    ui.post { uploaded++; setBusy(false); next() }
+                    if (croppedCopy != null) {
+                        try { saveToGallery(file.name.substringBeforeLast('.') + "_cover.jpg", croppedCopy) } catch (_: Exception) { }
+                    }
+                    ui.post { uploaded++; renewedSession = false; setBusy(false); next() }
                 } catch (e: Exception) {
+                    if (e is DriveIO.HttpError && e.code == 401 && !renewedSession) {
+                        // Expired session: renew silently once and send the same photo again.
+                        GoogleAuth.invalidate(this, token)
+                        ui.post { renewedSession = true; setBusy(false); send(withCover) }
+                        return@execute
+                    }
                     if (e is DriveIO.HttpError && e.code == 401) GoogleAuth.invalidate(this, token)
-                    ui.post { setBusy(false); status.text = "Invio non riuscito: ${e.message}. Riprova." }
+                    ui.post { renewedSession = false; setBusy(false); status.text = "Upload failed: ${e.message}. Nothing was lost: try again." }
                 }
             }
         }
