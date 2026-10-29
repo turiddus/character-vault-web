@@ -57,6 +57,8 @@ class MainActivity : EnglishActivity() {
         }
     }
     private val io = Executors.newFixedThreadPool(2)
+    private val genesisIo = Executors.newSingleThreadExecutor()
+    @Volatile private var genesisBusy = false
     private var inbox = ""
     private var jsReady = false
     private val sharedQueue = ArrayList<Uri>()
@@ -101,7 +103,10 @@ class MainActivity : EnglishActivity() {
         WebView.setWebContentsDebuggingEnabled(applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0)
         val loader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            // 8.2.1: images created on the phone by Genesis (app-private folder, read-only for the page).
+            .addPathHandler("/genesis-phone/", WebViewAssetLoader.InternalStoragePathHandler(this, GenesisPhone.dir(this)))
             .build()
+        GenesisPhone.recover(this)
         web = WebView(this).apply {
             layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             setBackgroundColor(0xFF0C0A0F.toInt())
@@ -323,6 +328,43 @@ class MainActivity : EnglishActivity() {
         cropper.launch(i)
     }
 
+    // ------------------------------------------------------------------ 8.2.1 Genesis on the phone
+    private fun genesisEvent(type: String, name: String?, message: String?) =
+        js("window.__cvGenesisPhone && window.__cvGenesisPhone(${q(JSONObject().put("type", type).put("name", name ?: "").put("message", message ?: "").toString())})")
+
+    /** Uploads a phone-generated image to the Drive inbox, like any phone photo: the PC imports it, Codex catalogs it. */
+    private fun genesisSend(name: String) {
+        val file = GenesisPhone.file(this, name) ?: run { genesisEvent("send_failed", name, "Image not found on the phone."); return }
+        if (inbox.isEmpty()) {
+            GenesisPhone.setUpload(this, name, "failed", "The archive was not loaded yet")
+            genesisEvent("send_failed", name, "The archive is still loading: open the gallery, then tap Send.")
+            return
+        }
+        GenesisPhone.setUpload(this, name, "sending")
+        genesisEvent("sending", name, null)
+        GoogleAuth.authorize(this, consent, true) { token, error ->
+            if (token == null) {
+                GenesisPhone.setUpload(this, name, "failed", "Google sign-in failed")
+                genesisEvent("send_failed", name, "Google sign-in failed: $error"); return@authorize
+            }
+            val target = inbox
+            io.execute {
+                try {
+                    DriveIO.retrying {
+                        DriveIO.upload(token, target, name, "image/png", file.length(), { file.inputStream() },
+                            properties = mapOf("cv_origin" to "android", "cv_genesis" to "phone"))
+                    }
+                    GenesisPhone.setUpload(this, name, "sent")
+                    genesisEvent("sent", name, null)
+                } catch (e: Exception) {
+                    if (e is DriveIO.HttpError && e.code == 401) GoogleAuth.invalidate(this, token)
+                    GenesisPhone.setUpload(this, name, "failed", e.message ?: "upload failed")
+                    genesisEvent("send_failed", name, e.message)
+                }
+            }
+        }
+    }
+
     // ------------------------------------------------------------------ ponte con la pagina
     private fun js(code: String) = main.post { web.evaluateJavascript(code, null) }
     private fun toast(text: String) = main.post { Toast.makeText(this, text, Toast.LENGTH_LONG).show() }
@@ -456,6 +498,68 @@ class MainActivity : EnglishActivity() {
                 }
             }
         }
+
+        // ---------------------------------------------------------------- 8.2.1 Genesis on the phone
+        // The OpenAI key goes in and never comes back out: the page only learns whether one is saved.
+        @JavascriptInterface fun genesisPhoneState(): String = GenesisPhone.state(this@MainActivity, genesisBusy).toString()
+
+        @JavascriptInterface fun genesisPhoneSetKey(key: String?): String = try {
+            GenesisPhone.saveKey(this@MainActivity, key ?: ""); ""
+        } catch (e: Exception) { e.message ?: "The key could not be saved." }
+
+        @JavascriptInterface fun genesisPhoneClearKey() = GenesisPhone.clearKey(this@MainActivity)
+
+        @JavascriptInterface fun genesisPhoneSetLimits(budget: Double, daily: Double): String = try {
+            GenesisPhone.setLimits(this@MainActivity, budget, daily); ""
+        } catch (e: Exception) { e.message ?: "Invalid amount." }
+
+        /** Starts one paid generation; returns "" when started, otherwise the reason. Result via __cvGenesisPhone. */
+        @JavascriptInterface fun genesisPhoneGenerate(model: String, quality: String, size: String, prompt: String, autoSend: Boolean): String {
+            val ctx = this@MainActivity
+            val job: JSONObject = synchronized(this) {
+                if (genesisBusy) return "A generation is already running."
+                val reserved = try {
+                    GenesisPhone.reserve(ctx, model, quality, size, prompt)
+                } catch (e: Exception) {
+                    return e.message ?: "Not allowed."
+                }
+                genesisBusy = true
+                reserved
+            }
+            main.post { window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+            genesisIo.execute {
+                val id = job.getString("id")
+                try {
+                    val name = GenesisPhone.generate(ctx, job, prompt)
+                    genesisBusy = false
+                    genesisEvent("generated", name, null)
+                    if (autoSend) main.post { genesisSend(name) }
+                } catch (e: GenesisPhone.Uncertain) {
+                    GenesisPhone.uncertain(ctx, id, e.message ?: "uncertain")
+                    genesisEvent("uncertain", null, e.message)
+                } catch (e: Exception) {
+                    GenesisPhone.failed(ctx, id, e.message ?: e.javaClass.simpleName)
+                    genesisEvent("failed", null, e.message ?: e.javaClass.simpleName)
+                } finally {
+                    genesisBusy = false
+                    main.post { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+                }
+            }
+            return ""
+        }
+
+        @JavascriptInterface fun genesisPhoneSend(name: String) = main.post { genesisSend(name) }
+
+        @JavascriptInterface fun genesisPhoneReconcile(id: String, charged: Boolean) = GenesisPhone.reconcile(this@MainActivity, id, charged)
+
+        @JavascriptInterface fun genesisPhoneSaveToGallery(name: String) {
+            io.execute {
+                try { GenesisPhone.saveToGallery(this@MainActivity, name); toast("Saved to Gallery › CharacterVault") }
+                catch (e: Exception) { toast("Save failed: ${e.message}") }
+            }
+        }
+
+        @JavascriptInterface fun genesisPhoneDelete(name: String) = GenesisPhone.delete(this@MainActivity, name)
     }
 }
 

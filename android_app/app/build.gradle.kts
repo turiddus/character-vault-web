@@ -33,8 +33,8 @@ android {
         applicationId = "io.github.turiddus.charactervault"
         minSdk = 28
         targetSdk = 35
-        versionCode = 820
-        versionName = "8.2.0"
+        versionCode = 821
+        versionName = "8.2.1"
         // Solo processori dei telefoni (ARM): l'APK è molto più leggero senza le librerie x86 degli emulatori.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
@@ -79,4 +79,5 @@ dependencies {
     implementation("androidx.webkit:webkit:1.12.1")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("com.google.mlkit:face-detection:16.1.7")
+    testImplementation("junit:junit:4.13.2")
 }

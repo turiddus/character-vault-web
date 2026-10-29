@@ -22,13 +22,13 @@ jobs:
           printf "storeFile=ci.jks\nstorePassword=civault\nkeyAlias=vault\nkeyPassword=civault\n" > keystore.properties
           chmod +x gradlew
           set -o pipefail
-          ./gradlew --no-daemon --stacktrace assembleRelease 2>&1 | tee build.log
+          ./gradlew --no-daemon --stacktrace testReleaseUnitTest assembleRelease 2>&1 | tee build.log
       - name: Verify APK
         run: |
           APK=android_app/app/build/outputs/apk/release/app-release.apk
           BT=$(ls -d $ANDROID_HOME/build-tools/35.* | tail -1)
           badge=$("$BT/aapt" dump badging "$APK")
-          echo "$badge" | grep -q "versionCode='820'" || { echo "::error::versionCode is not 820"; exit 1; }
+          echo "$badge" | grep -q "versionCode='821'" || { echo "::error::versionCode is not 821"; exit 1; }
           # 7.2: adaptive icon (with monochrome layer) and splash theme must be in the package
           "$BT/aapt" dump xmltree "$APK" res/mipmap-anydpi-v26/ic_launcher.xml >/dev/null 2>&1 || "$BT/aapt2" dump resources "$APK" | grep -q "mipmap/ic_launcher" || { echo "::error::adaptive icon missing"; exit 1; }
           "$BT/aapt2" dump resources "$APK" | grep -q "style/Theme.CharacterVault.Starting" || { echo "::error::splash theme missing"; exit 1; }
@@ -36,7 +36,9 @@ jobs:
           # release resources are path-shortened by AGP 8 (res/xY.png): check that an icon is declared
           echo "$badge" | grep -qE "application-icon-160:'res/" || { echo "::error::launcher icon missing"; exit 1; }
           echo "$badge" | grep -E "^application: |application-icon-160" | head -2
-          for f in index.html ui72.js ui72.css links73.js genesis82.js icon-192.png icon-512.png manifest.webmanifest sw.js; do
+          # 8.2.1: Genesis on the phone (native bridge class compiled into the APK)
+          unzip -p "$APK" 'classes*.dex' | grep -aq "genesisPhoneGenerate" || { echo "::error::Genesis phone bridge missing"; exit 1; }
+          for f in index.html ui72.js ui72.css links73.js genesis82.js genesis_phone821.js icon-192.png icon-512.png manifest.webmanifest sw.js; do
             unzip -l "$APK" | grep -q "assets/$f" || { echo "::error::assets/$f missing"; exit 1; }
           done
           intents=$("$BT/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -cE "android.intent.action.SEND" || true)
@@ -67,7 +69,7 @@ jobs:
       - name: Run BUILD_ANDROID_APK.bat
         shell: cmd
         run: |
-          set "DEST=%RUNNER_TEMP%\Users\Salvatore&Annalisa\Downloads\CharacterVault_8.2.0_sorgente\CharacterVault_8.2.0"
+          set "DEST=%RUNNER_TEMP%\Users\Salvatore&Annalisa\Downloads\CharacterVault_8.2.1_sorgente\CharacterVault_8.2.1"
           robocopy . "%DEST%" /E /XD .git /NFL /NDL /NJH /NJS /NP >nul
           "%JAVA_HOME_17_X64%\bin\keytool.exe" -genkeypair -keystore "%DEST%\android_app\charactervault.jks" -alias vault -storepass "old&Pass!1" -keypass "old&Pass!1" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Character Vault CI" >nul 2>&1
           > "%DEST%\android_app\keystore.properties" (
