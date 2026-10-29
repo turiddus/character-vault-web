@@ -37,18 +37,22 @@ jobs:
           cd /d "%NEW%"
           call AGGIORNA_CHARACTER_VAULT.bat < "%RUNNER_TEMP%\answers.txt" > "%GITHUB_WORKSPACE%\update.log" 2>&1
           type "%GITHUB_WORKSPACE%\update.log"
-          findstr /c:"FATTO" "%GITHUB_WORKSPACE%\update.log" || exit /b 1
-          findstr /c:"new" "%OLD%\main.py" || exit /b 1
+          set "CHK=%GITHUB_WORKSPACE%\checks.log"
+          findstr /c:"FATTO" "%GITHUB_WORKSPACE%\update.log" && echo ok FATTO>>"%CHK%" || exit /b 1
+          type "%OLD%\main.py" >>"%CHK%"
+          findstr /c:"new" "%OLD%\main.py" && echo ok main.py replaced>>"%CHK%" || exit /b 1
           if exist "%OLD%\INSTALLA_RC278_SYNC_611.bat" exit /b 1
+          echo ok old installer moved>>"%CHK%"
           if not exist "%OLD%\START_NOTEBOOK_8GB.bat" exit /b 1
-          findstr /c:"USER MEDIA" "%OLD%\Library\photo.jpg" || exit /b 1
-          dir /s /b "%OLD%\Data\backups\updates\INSTALLA_RC278_SYNC_611.bat" || exit /b 1
-          dir /s /b "%OLD%\Data\backups\updates\catalog_before_update.sqlite3" || exit /b 1
-          echo --- wrong confirmation: nothing changes
+          echo ok launcher kept>>"%CHK%"
+          findstr /c:"USER MEDIA" "%OLD%\Library\photo.jpg" && echo ok media kept>>"%CHK%" || exit /b 1
+          dir /s /b "%OLD%\Data\backups\updates" >>"%CHK%"
+          dir /s /b "%OLD%\Data\backups\updates\INSTALLA_RC278_SYNC_611.bat" && echo ok retired file in backup>>"%CHK%" || exit /b 1
+          dir /s /b "%OLD%\Data\backups\updates\catalog_before_update.sqlite3" && echo ok catalog backup>>"%CHK%" || exit /b 1
           call AGGIORNA_CHARACTER_VAULT.bat < "%RUNNER_TEMP%\cancel.txt" > "%GITHUB_WORKSPACE%\cancel.log" 2>&1
-          findstr /c:"Annullato" "%GITHUB_WORKSPACE%\cancel.log" || exit /b 1
+          findstr /c:"Annullato" "%GITHUB_WORKSPACE%\cancel.log" && echo ok cancel without changes>>"%CHK%" || exit /b 1
       - name: Report
         if: always()
         shell: bash
         run: |
-          for f in update.log cancel.log; do [ -f $f ] && echo "::notice title=$f::$(sed ':a;N;$!ba;s/\n/%0A/g' $f | cut -c1-3000)"; done; true
+          for f in update.log cancel.log checks.log; do [ -f $f ] && echo "::notice title=$f::$(sed ':a;N;$!ba;s/\n/%0A/g' $f | cut -c1-3000)"; done; true
