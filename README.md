@@ -9,3 +9,5 @@ ricerca, personaggi, catalogo e aggiunta di immagini, letti dall'archivio su Goo
 - Le foto caricate arrivano sempre come originali; le schede già importate non compaiono più tra quelle in attesa.
 - 7.2: visore a schermo intero con gesti, pressione lunga, pizzico per le colonne, storie e slideshow;
   *Settings › Appearance › Classic* rimette le schermate di prima.
+- 8.2: video da link (il PC scarica, importa e Codex analizza), schermata Genesis (comandi firmati verso il PC;
+  l'invio funziona dall'app Android).
