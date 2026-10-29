@@ -37,13 +37,14 @@ if exist "%TARGET%\.venv\Scripts\python.exe" set "PYTHON=%TARGET%\.venv\Scripts\
 if exist "%TARGET%\_runtime\python\python.exe" set "PYTHON=%TARGET%\_runtime\python\python.exe"
 if exist "%TARGET%\_runtime_v2\python\python.exe" set "PYTHON=%TARGET%\_runtime_v2\python\python.exe"
 if defined PYTHON goto :run
-where py >/dev/null 2>/dev/null && (py -3.11 -c "import sys" >/dev/null 2>/dev/null && set "PYTHON=py -3.11")
-if not defined PYTHON where python >/dev/null 2>/dev/null && set "PYTHON=python"
-if not defined PYTHON (
-  echo [ERRORE] Python non trovato: avvia prima START_AND_REPAIR_CHARACTER_VAULT.bat nella cartella installata.
-  pause
-  exit /b 1
-)
+rem No private runtime: a Python 3.9+ on PATH, then the py launcher.
+python -c "import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)" >nul 2>nul
+if not errorlevel 1 set "PYTHON=python" & goto :run
+py -3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)" >nul 2>nul
+if not errorlevel 1 set "PYTHON=py -3" & goto :run
+echo [ERRORE] Python non trovato: avvia prima START_AND_REPAIR_CHARACTER_VAULT.bat nella cartella installata.
+pause
+exit /b 1
 :run
 if exist "%PYTHON%" (
   "%PYTHON%" -X utf8 "%~dp0install_update.py" --target "%TARGET%"
