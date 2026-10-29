@@ -55,12 +55,17 @@ def make_media():
     www = DATA / "www"
     (www / "dash").mkdir(parents=True, exist_ok=True)
     ff = addons.find_ffmpeg(BASE)["ffmpeg"]
+    # separate video and audio streams (like YouTube/Instagram high quality): yt-dlp must join them with FFmpeg
     subprocess.run([ff, "-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=854x480:rate=25", "-f", "lavfi",
                     "-i", "sine=frequency=500:sample_rate=48000", "-t", "6", "-map", "0:v", "-map", "1:a", "-c:v",
-                    "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-f", "dash", str(www / "dash" / "manifest.mpd")],
-                   check=True, creationflags=addons.FLAGS)
-    (www / "page.html").write_text('<html><head><title>Clip è & co</title></head><body>'
-                                   '<video src="dash/chunk.mp4"></video></body></html>', encoding="utf-8")
+                    "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-use_template", "1", "-use_timeline", "1",
+                    "-f", "dash", "manifest.mpd"], check=True, creationflags=addons.FLAGS, cwd=str(www / "dash"))
+    subprocess.run([ff, "-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=640x360:rate=25", "-f", "lavfi",
+                    "-i", "sine=frequency=330", "-t", "4", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac",
+                    "-shortest", "clip.mp4"], check=True, creationflags=addons.FLAGS, cwd=str(www))
+    (www / "page.html").write_text('<html><head><title>Clip è &amp; co</title></head><body>'
+                                   '<video src="clip.mp4"></video></body></html>', encoding="utf-8")
+    R["dash_files"] = sorted(p.name for p in (www / "dash").iterdir())
 
     class Quiet(http.server.SimpleHTTPRequestHandler):
         def log_message(self, *a):
@@ -70,9 +75,12 @@ def make_media():
     return srv.server_address[1]
 
 
+PORT = [0]
+
+
 @step("download_dash_merge")
 def _():
-    port = make_media()
+    port = PORT[0] = make_media()
     runner = LinkRunner(addon, DATA / "downloads" / "work", BASE / "Downloads",
                         ffmpeg=addons.find_ffmpeg(BASE)["ffmpeg"], project_root=BASE)
     events = []
@@ -85,6 +93,16 @@ def _():
                            creationflags=addons.FLAGS).stdout.split()
     assert "video" in probe and "audio" in probe, probe
     return {"file": file.name, "size": file.stat().st_size, "streams": probe, "events": sorted(set(events))}
+
+
+@step("download_page_with_video")
+def _():
+    runner = LinkRunner(addon, DATA / "downloads" / "work", BASE / "Downloads",
+                        ffmpeg=addons.find_ffmpeg(BASE)["ffmpeg"], project_root=BASE)
+    result = runner.run({"job_id": "Lci3", "url": f"http://127.0.0.1:{PORT[0]}/page.html", "quality": "1080p"},
+                        lambda kind, ev: None)
+    assert result.get("files"), result
+    return {"file": Path(result["files"][0]["path"]).name, "title": result["files"][0]["title"]}
 
 
 @step("download_unsupported")
@@ -129,7 +147,7 @@ def _():
     marker = DATA / "stub_launch.json"
     os.environ["CV_STUB_OUT"] = str(marker)
     sample = BASE / "Downloads"
-    files = [str(p) for p in sample.rglob("*.mp4")][:1]
+    files = ([str(p) for p in sample.rglob("*.mp4")] + [str(DATA / "www" / "clip.mp4")])[:2]
     bridge.launch(files)
     for _ in range(120):
         if marker.is_file():
@@ -154,7 +172,7 @@ def _():
     db = DATA / "catalog.sqlite3"
     conn = sqlite3.connect(db)
     conn.execute("CREATE TABLE exports(output TEXT PRIMARY KEY, created REAL, payload TEXT)")
-    video = next((BASE / "Downloads").rglob("*.mp4"))
+    video = DATA / "www" / "clip.mp4"
     conn.execute("INSERT INTO exports VALUES (?,?,?)", (str(video), time.time(), json.dumps({"duration": 6})))
     conn.commit()
     conn.close()
