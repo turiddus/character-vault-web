@@ -708,7 +708,7 @@ function stPause(on){
   if (!ST.el) return;
   ST.paused = on; ST.el.classList.toggle("paused", on);
   if (on) { ST.anim?.pause(); ST.video?.pause(); if (ST.audio) fadeVol(ST.audio, .25, 250); }
-  else { ST.anim?.play(); ST.video?.play().catch(() => {}); if (ST.audio) fadeVol(ST.audio, .8, 400); }
+  else { ST.anim?.play(); ST.video?.play().catch(() => {}); if (ST.audio) { ST.audio.play().catch(() => {}); fadeVol(ST.audio, .8, 400); } }
 }
 function stBind(){
   const el = ST.el;
@@ -767,7 +767,10 @@ document.addEventListener("keydown", e => {
   if (e.key === "ArrowRight") stShow(ST.idx + 1); else if (e.key === "ArrowLeft") stShow(ST.idx - 1);
   else if (e.key === " ") { e.preventDefault(); stPause(!ST.paused); } else if (e.key === "Escape") history.back();
 });
-document.addEventListener("visibilitychange", () => { if (ST.el && document.visibilityState === "hidden") stPause(true); });
+// Home button, another app, screen off: stop the story and its music (not only lower the volume).
+function appHidden(){ if (!ST.el) return; stPause(true); ST.audio?.pause(); }
+window.__cvAppPaused = appHidden;                       // called by the Android app in onPause
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") appHidden(); });
 
 /* =================================================================== hooks into the core screens */
 const core = {openDetail, bindCommon, renderPerson, renderThing, renderSettings};
