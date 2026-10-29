@@ -35,6 +35,12 @@ Object.assign(ICONS, {
 function haptic(kind){
   try { if (nativeHas("haptic")) window.CVNative.haptic(kind || "tick"); else navigator.vibrate?.(kind === "long" ? 18 : 8); } catch (e) {}
 }
+// one message at a time: a new toast replaces the previous one instead of drawing over it
+const coreToast = window.toast;
+window.toast = function (text, ms) {
+  document.querySelectorAll("body > .toast").forEach(t => t.remove());
+  return coreToast(text, ms);
+};
 function floatBadge(text){
   const b = document.createElement("div"); b.className = "cv-badge-float"; b.textContent = text;
   document.body.appendChild(b); setTimeout(() => b.remove(), 950);

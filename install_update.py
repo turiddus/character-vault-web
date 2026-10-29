@@ -18,9 +18,9 @@ import tempfile
 from datetime import datetime
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "7.1.0"
+VERSION = "7.2.0"
 MANIFEST = "SOURCE_MANIFEST_SHA256.json"
-SUPPORTED = {"5.0.3", "5.1.0", "5.2.0", "5.2.1", "6.0.0", "6.0.1", "6.0.2", "6.0.3", "6.0.4", "6.0.5", "6.0.6", "6.0.7", "6.0.8", "6.0.9", "6.0.10", "6.0.11", "7.0.0-preview.1", "7.0.0-ultimate-rc1", "7.0.0-ultimate-adaptive-rc2", "7.0.0-ultimate-adaptive-rc2.3-safe-shutdown", "7.0.0-ultimate-adaptive-rc2.6-mobile-sync-release-watch", "7.0.0-ultimate-adaptive-rc2.7-bidirectional-remote-log", "7.0.0-ultimate-adaptive-rc2.7.3-sync-root-cause", "7.0.0-ultimate-adaptive-rc2.7.3-notebook-sync", "7.0.0-ultimate-adaptive-rc2.7.4-core-no-agents", "7.0.0-ultimate-adaptive-rc2.7.5-core-original-recovery", "7.0.0-ultimate-adaptive-rc2.7.6-clean-exit-no-agents", "7.0.0-ultimate-adaptive-rc2.7.7-original-first-no-agents", "7.0.0-ultimate-adaptive-rc2.7.8-legacy-mobile-sync-no-agents", VERSION}
+SUPPORTED = {"5.0.3", "5.1.0", "5.2.0", "5.2.1", "6.0.0", "6.0.1", "6.0.2", "6.0.3", "6.0.4", "6.0.5", "6.0.6", "6.0.7", "6.0.8", "6.0.9", "6.0.10", "6.0.11", "7.0.0-preview.1", "7.0.0-ultimate-rc1", "7.0.0-ultimate-adaptive-rc2", "7.0.0-ultimate-adaptive-rc2.3-safe-shutdown", "7.0.0-ultimate-adaptive-rc2.6-mobile-sync-release-watch", "7.0.0-ultimate-adaptive-rc2.7-bidirectional-remote-log", "7.0.0-ultimate-adaptive-rc2.7.3-sync-root-cause", "7.0.0-ultimate-adaptive-rc2.7.3-notebook-sync", "7.0.0-ultimate-adaptive-rc2.7.4-core-no-agents", "7.0.0-ultimate-adaptive-rc2.7.5-core-original-recovery", "7.0.0-ultimate-adaptive-rc2.7.6-clean-exit-no-agents", "7.0.0-ultimate-adaptive-rc2.7.7-original-first-no-agents", "7.0.0-ultimate-adaptive-rc2.7.8-legacy-mobile-sync-no-agents", "7.1.0", VERSION}
 PROTECTED = {"data", "library", "libreria", "_runtime", "_runtime_v2", ".venv", ".git", "credentials"}
 # One-off hotfix installers and notes accumulated by RC2.7.x and older releases. After a
 # successful update they are MOVED (never deleted) into this update's backup folder,
