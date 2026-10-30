@@ -213,3 +213,16 @@ html.cols-fixed .grid .card{border-radius:calc(14px - var(--cols,3) * 1.5px)}
 /* 8.3 Genesis DNA */
 .gp-dna{margin:10px 0 4px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg2, #1d1924);font-size:13px;line-height:1.4}
 #gp-mem{margin:4px 0 8px;font-size:12px}
+
+/* 9.0 Studio and Explore on the phone */
+.sx-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:4px 12px 90px}
+.sx-cat{position:relative;height:150px;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--bg2,#1d1924);padding:0;text-align:left;color:#fff}
+.sx-cat img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sx-cat .sx-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.82))}
+.sx-cat b{position:absolute;left:12px;bottom:26px;font-size:15px;text-shadow:0 1px 2px #000}
+.sx-cat small{position:absolute;left:12px;bottom:9px;opacity:.85;font-size:12px}
+.sx-head{display:flex;gap:12px;align-items:flex-start}
+.sx-head .ent{width:110px;flex:none;pointer-events:none}
+.sx-bible{white-space:pre-wrap;line-height:1.45}
+.chip.sx-miss{border-color:#c98a2b;color:#e5a84a}
+.chips.sx-wrap{flex-wrap:wrap;overflow:visible;white-space:normal;padding-left:0;padding-right:0}
