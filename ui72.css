@@ -226,3 +226,12 @@ html.cols-fixed .grid .card{border-radius:calc(14px - var(--cols,3) * 1.5px)}
 .sx-bible{white-space:pre-wrap;line-height:1.45}
 .chip.sx-miss{border-color:#c98a2b;color:#e5a84a}
 .chips.sx-wrap{flex-wrap:wrap;overflow:visible;white-space:normal;padding-left:0;padding-right:0}
+
+/* 9.1 Studio perspectives */
+.sx-src{display:flex;gap:8px;overflow-x:auto;padding:6px 0 10px}
+.sx-src-i{flex:0 0 auto;width:68px;height:88px;padding:0;border:3px solid transparent;border-radius:10px;overflow:hidden;background:var(--bg2,#222)}
+.sx-src-i.on{border-color:var(--accent,#e34)}
+.sx-src-i img{width:100%;height:100%;object-fit:cover;display:block}
+.sx-g{margin-top:8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.sx-res{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sx-res img{width:72px;height:108px;object-fit:cover;border-radius:8px}
