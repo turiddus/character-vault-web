@@ -28,7 +28,7 @@ jobs:
           APK=android_app/app/build/outputs/apk/release/app-release.apk
           BT=$(ls -d $ANDROID_HOME/build-tools/35.* | tail -1)
           badge=$("$BT/aapt" dump badging "$APK")
-          echo "$badge" | grep -q "versionCode='900'" || { echo "::error::versionCode is not 900"; exit 1; }
+          echo "$badge" | grep -q "versionCode='904'" || { echo "::error::versionCode is not 904"; exit 1; }
           # 7.2: adaptive icon (with monochrome layer) and splash theme must be in the package
           "$BT/aapt" dump xmltree "$APK" res/mipmap-anydpi-v26/ic_launcher.xml >/dev/null 2>&1 || "$BT/aapt2" dump resources "$APK" | grep -q "mipmap/ic_launcher" || { echo "::error::adaptive icon missing"; exit 1; }
           "$BT/aapt2" dump resources "$APK" | grep -q "style/Theme.CharacterVault.Starting" || { echo "::error::splash theme missing"; exit 1; }
