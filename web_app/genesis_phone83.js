@@ -27,7 +27,12 @@ distance for entire figure, high depth of field without artificial blur. No styl
 exaggerated HDR or fantasy VFX. Fictional fantastical subjects must appear physically photographed.
 Enforce 1 primary character only, natural proportions and credible anatomy. Do not crop extremities.
 `;
-function buildPrompt(spec){ return MASTER + "\nCHARACTER SPECIFICATION:\n" + spec.trim(); }
+function buildPrompt(spec){
+  // 9.0.4: random characters with the realistic TXT2IMG master prompt of Photo Lab (same text as the PC)
+  const L = window.__cvLab;
+  if (L && L.ready() && load("cv_gp_realistic", true)) return L.genesis(spec);
+  return MASTER + "\nCHARACTER SPECIFICATION:\n" + spec.trim();
+}
 
 /* ------------------------------------------------------------------ shared memory (Drive folder Genesis_DNA) */
 const MEM = {pack: null, folder: "", remote: [], loaded: false, syncing: false, error: "", ownMerged: {}};
@@ -301,6 +306,7 @@ function panelHtml(){
     <label class="muted">Quality</label><select id="gp-quality">${QUALITIES.map(x => `<option value="${x}" ${x === q ? "selected" : ""}>${x.toUpperCase()}</option>`).join("")}</select>
     <label class="muted">Resolution</label><select id="gp-size">${SIZES.map(x => `<option value="${x}" ${x === z ? "selected" : ""}>${x.replace("x", " × ")}${x === "1152x2048" ? " · 9:16" : ""}</option>`).join("")}</select>
     <label class="gp-check"><input type="checkbox" id="gp-auto" ${load("cv_gp_auto", true) ? "checked" : ""}> Send to the gallery automatically</label>
+    <label class="gp-check"><input type="checkbox" id="gp-realistic" ${load("cv_gp_realistic", true) ? "checked" : ""}> Realistic master prompt (Photo Lab)</label>
     <div id="gp-estimate" class="muted"></div>
     <div class="row"><button class="btn primary" id="gp-go">${ico("image")} Create on this phone</button></div>
     <div id="gp-progress" class="gp-progress" hidden></div>
@@ -325,6 +331,7 @@ function bindPanel(){
   $("#gp-kind").onchange = e => { save("cv_gp_kind", e.target.value); newCharacter(); };
   $("#gp-world").onchange = e => { save("cv_gp_world", e.target.value); newCharacter(); };
   $("#gp-auto").onchange = e => save("cv_gp_auto", e.target.checked);
+  $("#gp-realistic").onchange = e => save("cv_gp_realistic", e.target.checked);
   for (const [id, key] of [["gp-model", "cv_gp_model"], ["gp-quality", "cv_gp_quality"], ["gp-size", "cv_gp_size"]])
     $("#" + id).onchange = e => { save(key, e.target.value); paintPhone(); };
   $("#gp-go").onclick = () => void create();

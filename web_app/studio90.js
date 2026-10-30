@@ -111,9 +111,10 @@ const canCreate = () => NATIVE && typeof window.CVNative.genesisPhoneStudio === 
 
 function tabs(active){
   return `<div class="chips" style="padding-top:0"><button class="chip ${active === "studio" ? "on" : ""}" data-st="studio">Studio</button>
+    <button class="chip ${active === "lab" ? "on" : ""}" data-st="lab">Photo Lab</button>
     <button class="chip ${active === "explore" ? "on" : ""}" data-st="explore">Explore</button></div>`;
 }
-function bindTabs(){ document.querySelectorAll("[data-st]").forEach(b => b.onclick = () => go(b.dataset.st === "explore" ? "#/studio/~explore" : "#/studio")); }
+function bindTabs(){ document.querySelectorAll("[data-st]").forEach(b => b.onclick = () => go(b.dataset.st === "studio" ? "#/studio" : `#/studio/~${b.dataset.st}`)); }
 
 function renderList(){
   const q = norm(S.query);
@@ -282,8 +283,134 @@ function bindPerspectives(e, st){
   };
 }
 
+/* ------------------------------------------------------------------ 9.0.4 Photo Lab (same master prompts as the PC) */
+let labWait = null, labDna = "", labRun = null, labSource = null;
+const LAB_SIZES = ["1152x2048", "1024x1536"];
+const hex = n => Array.from(crypto.getRandomValues(new Uint8Array(n))).map(b => b.toString(16).padStart(2, "0")).join("");
+async function labFolder(){
+  const root = rootId();
+  const found = (await children(root, "CV_Lab_References", true))[0];
+  if (found) return found.id;
+  return (await apiJson(`${API}/files?supportsAllDrives=true&fields=id`, {method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({name: "CV_Lab_References", mimeType: "application/vnd.google-apps.folder", parents: [root]})})).id;
+}
+async function toJpeg(file){
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 2048 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(r, "image/jpeg", 0.92));
+}
+async function labReference(){
+  // A Drive file id the app can download: gallery images already have one; a phone photo is uploaded once to
+  // CV_Lab_References (NOT the inbox, so the reference itself is not imported into the gallery).
+  if (!labSource) throw new Error("Choose the image first.");
+  if (labSource.kind === "drive") return labSource.id;
+  if (!labSource.id) {
+    const blob = await toJpeg(labSource.file);
+    labSource.id = (await uploadSmall(blob, `lab_${Date.now()}.jpg`, await labFolder())).id;
+  }
+  return labSource.id;
+}
+function labSourceHtml(){
+  const src = labSource ? (labSource.kind === "drive" ? `<img alt="" data-id="${esc(labSource.item.i)}">` : `<img alt="" src="${labSource.url}">`)
+    : `<span class="muted">No image</span>`;
+  return `<div class="lb-src"><div class="lb-prev">${src}</div><div class="lb-side">
+    <label class="btn">${ico("image")} Choose photo<input type="file" accept="image/*" id="lb-file" hidden></label>
+    <button class="btn" id="lb-gal">${ico("grid")} From the gallery</button></div></div><div id="lb-pick"></div>`;
+}
+function renderLab(){
+  const L = window.__cvLab;
+  if (!L?.ready()) { mountPage(`${tabs("lab")}<div class="empty">Loading Photo Lab…</div>`, "Photo Lab"); bindTabs(); L?.load().then(() => S.view === "studio" && renderLab()); return; }
+  const mode = load("cv_lab_mode", "txt2img"), q = load("cv_sx_quality", "low"), z = load("cv_lab_size", LAB_SIZES[0]);
+  const st = canCreate() ? (() => { try { return JSON.parse(window.CVNative.genesisPhoneState()); } catch (x) { return null; } })() : null;
+  const help = {txt2img: "Write only what you want: the phone wraps it in your realistic TXT2IMG master prompt.",
+    img2img: "The reference is remastered as a modern real photograph with the TXT2IMG master prompt.",
+    restore: "Old, damaged or black-and-white photo → modern full-color photograph (restoration master prompt).",
+    extract: "Every character of the scene becomes its own realistic full-body photo, in a coherent and fully sharp environment."}[mode];
+  const body = mode === "txt2img"
+    ? `<textarea class="txt" id="lb-text" rows="4" placeholder="e.g. an old fisherman mending nets on a pier at dawn">${esc(load("cv_lab_text", ""))}</textarea>
+       <label class="muted">Images</label><select id="lb-n">${[1, 2, 3, 4].map(n => `<option>${n}</option>`).join("")}</select>`
+    : labSourceHtml() + (mode === "img2img" ? `<input class="txt" id="lb-text" placeholder="Optional: what you want (e.g. 'same woman, rainy street')">`
+      : mode === "restore" ? `<input class="txt" id="lb-text" placeholder="Optional note (e.g. 'the dress was dark blue')">`
+      : `<label class="muted">Characters (counted from the left)</label><select id="lb-n">${Array.from({length: L.MAX_EXTRACT}, (_, i) => `<option>${i + 1}</option>`).join("")}</select>
+         <textarea class="txt" id="lb-notes" rows="3" placeholder="Optional, one line per character in the same order (e.g. 'the woman in the red coat')"></textarea>`);
+  mountPage(`${tabs("lab")}<div class="panel" id="lb"><h4>Photo Lab</h4>
+    <div class="chips sx-wrap">${Object.entries(L.LABELS).map(([k, v]) => `<button class="chip ${k === mode ? "on" : ""}" data-lm="${k}">${esc(v)}</button>`).join("")}</div>
+    <p class="muted">${esc(help)} Every result goes to the gallery: the PC archives it and Codex catalogs it.</p>
+    ${body}
+    <label class="muted">Quality</label><select id="lb-q">${QUALITIES.map(x => `<option value="${x}" ${x === q ? "selected" : ""}>${x.toUpperCase()}</option>`).join("")}</select>
+    <label class="muted">Resolution</label><select id="lb-z">${LAB_SIZES.map(x => `<option value="${x}" ${x === z ? "selected" : ""}>${x.replace("x", " × ")}${x === LAB_SIZES[0] ? " · 9:16" : ""}</option>`).join("")}</select>
+    <div class="muted" id="lb-est"></div>
+    ${canCreate() ? `<div class="row"><button class="btn primary" id="lb-go" ${!st?.has_key || labRun ? "disabled" : ""}>${ico("image")} Create (paid)</button>
+      <button class="btn" id="lb-stop" style="display:none">Stop after this one</button></div>
+      <div class="muted" id="lb-state">${!st?.has_key ? "Save your OpenAI key in Genesis › Create on this phone first." : labRun ? "Running…" : ""}</div>`
+      : `<p class="muted">Available in the Android app with an OpenAI key (Genesis › Create on this phone), or in Photo Lab on the PC.</p>`}
+    <div class="sx-res" id="lb-res"></div></div>`, "Photo Lab");
+  bindTabs();
+  document.querySelectorAll("#lb img[data-id]").forEach(img => io.observe(img));
+  document.querySelectorAll("[data-lm]").forEach(b => b.onclick = () => { save("cv_lab_mode", b.dataset.lm); renderLab(); });
+  $("#lb-q").onchange = e => { save("cv_sx_quality", e.target.value); est(); };
+  $("#lb-z").onchange = e => { save("cv_lab_size", e.target.value); est(); };
+  $("#lb-n") && ($("#lb-n").onchange = () => est());
+  const count = () => Number($("#lb-n")?.value || 1);
+  const est = () => {
+    const cost = Number(st?.prices?.["gpt-image-2.5-flare"]?.[$("#lb-z").value]?.[$("#lb-q").value]);
+    $("#lb-est").textContent = Number.isFinite(cost) ? `${count()} image(s) · ≈ $${(cost * count()).toFixed(3)}${mode === "txt2img" ? "" : " + reference"} · budget left $${Number(st?.remaining || 0).toFixed(3)}` : "";
+    return Number.isFinite(cost) ? cost * count() : 0;
+  };
+  est();
+  if ($("#lb-file")) $("#lb-file").onchange = e => {
+    const f = e.target.files?.[0]; if (!f) return;
+    labSource = {kind: "file", file: f, url: URL.createObjectURL(f), id: ""}; renderLab();
+  };
+  if ($("#lb-gal")) $("#lb-gal").onclick = () => {
+    const imgs = S.index.images.filter(it => it.mt !== "video" && (it.p || it.o)).slice(0, 90);
+    $("#lb-pick").innerHTML = `<div class="sx-src lb-grid">${imgs.map(it => `<button class="sx-src-i" data-pick="${esc(it.i)}"><img alt="" data-id="${esc(it.i)}"></button>`).join("")}</div>`;
+    document.querySelectorAll("#lb-pick img[data-id]").forEach(img => io.observe(img));
+    document.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => { const it = S.byId.get(b.dataset.pick); labSource = {kind: "drive", id: it.p || it.o, item: it}; renderLab(); });
+  };
+  if (!canCreate() || !$("#lb-go")) return;
+  $("#lb-stop").onclick = () => { if (labRun) labRun.stop = true; $("#lb-stop").disabled = true; };
+  $("#lb-go").onclick = async () => {
+    if (mode === "txt2img" && !$("#lb-text").value.trim()) return toast("Write what you want to see.", 3000);
+    if (mode !== "txt2img" && !labSource) return toast("Choose the image first.", 3000);
+    const n = mode === "txt2img" || mode === "extract" ? count() : 1, total = est();
+    const quality = $("#lb-q").value, size = $("#lb-z").value;
+    if (!await ask(`Create ${n} ${quality.toUpperCase()} image(s) with GPT Image? One paid OpenAI request each (≈ $${total.toFixed(3)}), one after another.`)) return;
+    const text = $("#lb-text")?.value || "", notes = ($("#lb-notes")?.value || "").split("\n");
+    if (mode === "txt2img") save("cv_lab_text", text);
+    const state = () => $("#lb-state");
+    labRun = {stop: false, done: 0}; const refused = [];
+    $("#lb-go").disabled = true; $("#lb-stop").style.display = ""; $("#lb-stop").disabled = false;
+    let ref = "";
+    try { if (mode !== "txt2img") { if (state()) state().textContent = "Preparing the reference image…"; ref = await labReference(); } }
+    catch (e) { labRun = null; $("#lb-go").disabled = false; $("#lb-stop").style.display = "none"; return toast("Reference: " + (e.message || e), 6000); }
+    for (let i = 1; i <= n; i++) {
+      if (labRun.stop) break;
+      const prompt = mode === "txt2img" ? L.txt2img(text) : mode === "img2img" ? L.img2img(text) : mode === "restore" ? L.restore(text) : L.extract(i, n, notes[i - 1] || "");
+      if (state()) state().textContent = `Image ${i}/${n}… (20 s – 3 min, keep the app open)`;
+      const result = new Promise(r => { labWait = r; });
+      let err;
+      if (mode === "txt2img") { labDna = hex(8); err = window.CVNative.genesisPhoneGenerateDna("gpt-image-2.5-flare", quality, size, prompt, true, labDna); }
+      else { labDna = ""; err = window.CVNative.genesisPhoneStudio("gpt-image-2.5-flare", quality, size, prompt, true, "lab", JSON.stringify([ref])); }
+      if (err) { labWait = null; if (state()) state().textContent = err; break; }
+      const ev = await result;
+      if (ev.type === "failed" && /OpenAI error 4\d\d/.test(ev.message || "")) { refused.push(`#${i}`); toast(`Image ${i}: refused by OpenAI, skipped.`, 4000); continue; }
+      if (ev.type !== "generated") { if (state()) state().textContent = `Stopped at image ${i}: ${ev.message || ev.type}`; labRun.stop = true; break; }
+      labRun.done++;
+      $("#lb-res")?.insertAdjacentHTML("beforeend", `<img alt="" src="/genesis-phone/${encodeURIComponent(ev.name)}">`);
+    }
+    const done = labRun.done, stopped = labRun.stop; labRun = null; labDna = "";
+    if ($("#lb-go")) { $("#lb-go").disabled = false; $("#lb-stop").style.display = "none"; }
+    if (state() && !(stopped && state().textContent.startsWith("Stopped")))
+      state().textContent = `${done} of ${n} created and sent: the PC archives them and Codex catalogs them.` + (refused.length ? ` Refused by OpenAI: ${refused.join(", ")}.` : "");
+  };
+}
+
 window.renderStudio = function (arg){
   if (arg === "~explore") return renderExplore();
+  if (arg === "~lab") return renderLab();
   if (arg) return renderDetail(decodeURIComponent(arg));
   return renderList();
 };
@@ -291,6 +418,9 @@ window.renderStudio = function (arg){
 const previous = window.__cvGenesisPhone;
 window.__cvGenesisPhone = function (raw){
   let ev = {}; try { ev = JSON.parse(raw); } catch (x) {}
+  if (labWait && ((ev.entity === "lab") || (labDna && ev.dna === labDna)) && ["generated", "failed", "uncertain"].includes(ev.type)) {
+    const w = labWait; labWait = null; w(ev); return;     // Photo Lab result: not a Genesis character
+  }
   if (previous) previous(raw);
   if (waiter && ev.entity && ["generated", "failed", "uncertain"].includes(ev.type)) { const w = waiter; waiter = null; w(ev); return; }
   if (batch) return;
