@@ -70,7 +70,7 @@ jobs:
       - name: Run BUILD_ANDROID_APK.bat
         shell: cmd
         run: |
-          set "DEST=%RUNNER_TEMP%\Users\Salvatore&Annalisa\Downloads\CharacterVault_9.0.1_sorgente\CharacterVault_9.0.1"
+          set "DEST=%RUNNER_TEMP%\Users\Salvatore&Annalisa\Downloads\CharacterVault_9.0.2_sorgente\CharacterVault_9.0.2"
           robocopy . "%DEST%" /E /XD .git /NFL /NDL /NJH /NJS /NP >nul
           "%JAVA_HOME_17_X64%\bin\keytool.exe" -genkeypair -keystore "%DEST%\android_app\charactervault.jks" -alias vault -storepass "old&Pass!1" -keypass "old&Pass!1" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Character Vault CI" >nul 2>&1
           > "%DEST%\android_app\keystore.properties" (
