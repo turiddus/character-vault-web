@@ -163,10 +163,9 @@ function paintPhone(){
   $("#gp-keystate").textContent = st.has_key ? "OpenAI key saved on this phone ✓ (encrypted by Android)" : "No OpenAI key on this phone yet.";
   $("#gp-key").placeholder = st.has_key ? "Enter a new key to replace it" : "sk-…";
   $("#gp-clearkey").disabled = !st.has_key;
-  $("#gp-money").textContent = `Budget left ${usd(st.remaining)} of ${usd(st.budget, 2)} · today ${usd(st.today_remaining)} of ${usd(st.daily, 2)} · spent ${usd(st.spent)} · ${st.generated} images`;
-  const cost = estimate(), reserve = cost == null ? null : cost * (st.margin || 1.25);
-  const left = Math.min(Number(st.remaining || 0), Number(st.today_remaining || 0));
-  $("#gp-estimate").textContent = cost == null ? "" : `This image ≈ ${usd(cost, 4)} (reserved ${usd(reserve, 4)}) · you can still create ${reserve > 0 ? Math.floor(left / reserve) : 0} with this setting.`;
+  $("#gp-money").textContent = `Spent on this phone ${usd(st.spent)} · ${st.generated} images · your balance: platform.openai.com › Billing`;
+  const cost = estimate();
+  $("#gp-estimate").textContent = cost == null ? "" : `This image ≈ ${usd(cost, 4)}.`;
   const busy = !!st.busy;
   $("#gp-go").disabled = busy || !st.has_key || !!(st.uncertain && st.uncertain.id) || !P.dna;
   $("#gp-go").innerHTML = busy ? "Creating…" : `${ico("image")} Create on this phone`;
@@ -292,9 +291,6 @@ function panelHtml(){
     <div id="gp-keystate" class="muted"></div>
     <input class="txt" id="gp-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-…">
     <div class="row"><button class="btn" id="gp-savekey">Save key</button><button class="btn" id="gp-clearkey">Remove key</button></div>
-    <div class="gp-limits"><label class="muted">Local budget $<input class="txt" id="gp-budget" type="number" min="0" step="0.5" value="${esc(st.budget || 0)}"></label>
-      <label class="muted">Daily limit $<input class="txt" id="gp-daily" type="number" min="0" step="0.5" value="${esc(st.daily || 0)}"></label>
-      <button class="btn" id="gp-savelimits">Save limits</button></div>
     <div id="gp-money" class="muted"></div>
     <label class="muted">Subject</label><select id="gp-kind">${kinds.map(([id, v]) => `<option value="${id}" ${id === kind ? "selected" : ""}>${esc(v)}</option>`).join("")}</select>
     <label class="muted">World</label><select id="gp-world">${worlds.map(([id, v]) => `<option value="${id}" ${id === world ? "selected" : ""}>${esc(v)}</option>`).join("")}</select>
@@ -312,7 +308,7 @@ function panelHtml(){
     <div id="gp-progress" class="gp-progress" hidden></div>
     <div id="gp-uncertain" class="gp-uncertain" hidden></div>
     <div id="gp-results" class="gp-results"></div>
-    <p class="muted">Local budget = your spending cap on this phone, separate from the PC. It is NOT your OpenAI balance (platform.openai.com › Billing).
+    <p class="muted">No local budget: your OpenAI prepaid balance is the limit (platform.openai.com › Billing).
       A request is never repeated automatically. The key stays on this phone only.</p></div>`;
 }
 function bindPanel(){
@@ -323,10 +319,6 @@ function bindPanel(){
     toast(err || "Key saved on this phone (encrypted)."); paintPhone();
   };
   $("#gp-clearkey").onclick = async () => { if (await confirmBox("Remove the OpenAI key from this phone?", "Remove")) { window.CVNative.genesisPhoneClearKey(); paintPhone(); } };
-  $("#gp-savelimits").onclick = () => {
-    const err = window.CVNative.genesisPhoneSetLimits(Number($("#gp-budget").value || 0), Number($("#gp-daily").value || 0));
-    toast(err || "Limits saved."); paintPhone();
-  };
   $("#gp-new").onclick = () => newCharacter();
   $("#gp-kind").onchange = e => { save("cv_gp_kind", e.target.value); newCharacter(); };
   $("#gp-world").onchange = e => { save("cv_gp_world", e.target.value); newCharacter(); };

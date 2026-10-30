@@ -242,3 +242,4 @@ html.cols-fixed .grid .card{border-radius:calc(14px - var(--cols,3) * 1.5px)}
 .lb-prev img{width:100%;height:100%;object-fit:cover}
 .lb-side{display:flex;flex-direction:column;gap:8px}
 .lb-grid{flex-wrap:wrap;overflow:visible}
+.lb-warn{margin-top:6px;padding:8px 10px;border-radius:10px;background:rgba(229,168,74,.14);color:var(--warn,#e5a84a)}
