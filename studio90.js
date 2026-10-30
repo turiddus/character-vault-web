@@ -56,7 +56,8 @@ function perspectivePrompt(bible, key, extra, references){
   text += "Change ONLY the camera viewpoint and framing:\n"
     + `CAMERA: ${PV[key][3]}\n`
     + "Keep the pose and action consistent where the new viewpoint allows. Respect the requested framing: do not "
-    + "force a full body when a close-up is requested. Infer hidden details conservatively from the references.";
+    + "force a full body when a close-up is requested. Infer hidden details conservatively from the references. "
+    + "The character stays dressed exactly as in the source, with the same clothing coverage from every side.";
   if (key === "stivali_gambe") text += " Keep the footwear of the source (or bare feet); do not invent boots.";
   if ((bible || "").trim()) text += `\nCHARACTER BIBLE: ${bible.trim().slice(0, 1200)}`;
   if ((extra || "").trim()) text += `\nALSO: ${extra.trim().slice(0, 400)}`;
@@ -254,6 +255,7 @@ function bindPerspectives(e, st){
     const refs = [srcItem.p || srcItem.o, ...others];
     const extra = $("#sx-v-extra").value || "";
     batch = {entity: e.id, stop: false, done: 0};
+    const refused = [];
     const go_ = $("#sx-v-go"), stop = $("#sx-v-stop"), state = () => $("#sx-v-state");
     go_.disabled = true; stop.style.display = ""; stop.disabled = false;
     for (const key of keys) {
@@ -264,6 +266,9 @@ function bindPerspectives(e, st){
       const err = window.CVNative.genesisPhoneStudio("gpt-image-2.5-flare", quality, size, prompt, true, e.id, JSON.stringify(refs));
       if (err) { waiter = null; if (state()) state().textContent = err; break; }
       const ev = await result;
+      if (ev.type === "failed" && /OpenAI error 4\d\d/.test(ev.message || "")) {   // refused by OpenAI: no image, go on
+        refused.push(PV[key][1]); toast(`${PV[key][1]}: refused by OpenAI, skipped.`, 4000); continue;
+      }
       if (ev.type !== "generated") { if (state()) state().textContent = `Stopped at ${PV[key][1]}: ${ev.message || ev.type}`; batch.stop = true; break; }
       batch.done++;
       const res = $("#sx-v-res");
@@ -272,7 +277,8 @@ function bindPerspectives(e, st){
     const n = batch.done, stopped = batch.stop;
     batch = null;
     if ($("#sx-v-go")) { $("#sx-v-go").disabled = false; $("#sx-v-stop").style.display = "none"; }
-    if (state() && !(stopped && n < keys.length && state().textContent.startsWith("Stopped"))) state().textContent = `${n} of ${keys.length} created and sent: the PC archives them and adds them to ${e.name}.`;
+    if (state() && !(stopped && n < keys.length && state().textContent.startsWith("Stopped"))) state().textContent = `${n} of ${keys.length} created and sent: the PC archives them and adds them to ${e.name}.`
+      + (refused.length ? ` Refused by OpenAI's safety filter (no image): ${refused.join(", ")} — try another source image.` : "");
   };
 }
 
