@@ -187,7 +187,7 @@ function renderDetail(id){
   const estimate = () => {
     const s2 = st || {}, quality = $("#sx-q").value, size = $("#sx-z").value;
     const cost = Number(s2.prices?.["gpt-image-2.5-flare"]?.[size]?.[quality]);
-    $("#sx-est").textContent = Number.isFinite(cost) ? `≈ $${cost.toFixed(4)} + reference images · budget left $${Number(s2.remaining || 0).toFixed(3)}` : "";
+    $("#sx-est").textContent = Number.isFinite(cost) ? `≈ $${cost.toFixed(4)} + reference images` : "";
     return cost;
   };
   $("#sx-q").onchange = ev => { save("cv_sx_quality", ev.target.value); estimate(); };
@@ -236,7 +236,7 @@ function bindPerspectives(e, st){
   const picked = () => [...panel.querySelectorAll("[data-v].on")].map(b => b.dataset.v);
   const est = () => {
     const n = picked().length, cost = Number(st?.prices?.["gpt-image-2.5-flare"]?.[$("#sx-z")?.value || SIZES[0]]?.[$("#sx-q")?.value || "low"]);
-    $("#sx-v-est").textContent = n ? `${n} image(s)${Number.isFinite(cost) ? ` · ≈ $${(cost * n).toFixed(3)} + references` : ""} · budget left $${Number(st?.remaining || 0).toFixed(3)}` : "No viewpoint selected.";
+    $("#sx-v-est").textContent = n ? `${n} image(s)${Number.isFinite(cost) ? ` · ≈ $${(cost * n).toFixed(3)} + references` : ""}` : "No viewpoint selected.";
     return Number.isFinite(cost) ? cost * n : 0;
   };
   panel.querySelectorAll("[data-v]").forEach(b => b.onclick = () => { b.classList.toggle("on"); est(); });
@@ -265,7 +265,7 @@ function bindPerspectives(e, st){
       const prompt = perspectivePrompt(e.bible || "", key, extra, refs.length);
       const result = new Promise(resolve => { waiter = resolve; });
       const err = window.CVNative.genesisPhoneStudio("gpt-image-2.5-flare", quality, size, prompt, true, e.id, JSON.stringify(refs));
-      if (err) { waiter = null; if (state()) state().textContent = err; break; }
+      if (err) { waiter = null; if (state()) state().textContent = `Stopped at ${PV[key][1]}: ${err} (nothing was sent or charged)`; batch.stop = true; toast(err, 7000); break; }
       const ev = await result;
       if (ev.type === "failed" && /OpenAI error 4\d\d/.test(ev.message || "")) {   // refused by OpenAI: no image, go on
         refused.push(PV[key][1]); toast(`${PV[key][1]}: refused by OpenAI, skipped.`, 4000); continue;
@@ -323,7 +323,7 @@ function renderLab(){
   const L = window.__cvLab;
   if (!L?.ready()) { mountPage(`${tabs("lab")}<div class="empty">Loading Photo Lab…</div>`, "Photo Lab"); bindTabs(); L?.load().then(() => S.view === "studio" && renderLab()); return; }
   const mode = load("cv_lab_mode", "txt2img"), q = load("cv_sx_quality", "low"), z = load("cv_lab_size", LAB_SIZES[0]);
-  const st = canCreate() ? (() => { try { return JSON.parse(window.CVNative.genesisPhoneState()); } catch (x) { return null; } })() : null;
+  let st = canCreate() ? (() => { try { return JSON.parse(window.CVNative.genesisPhoneState()); } catch (x) { return null; } })() : null;
   const help = {txt2img: "Write only what you want: the phone wraps it in your realistic TXT2IMG master prompt.",
     img2img: "The reference is remastered as a modern real photograph with the TXT2IMG master prompt.",
     restore: "Old, damaged or black-and-white photo → modern full-color photograph (restoration master prompt).",
@@ -354,9 +354,10 @@ function renderLab(){
   $("#lb-z").onchange = e => { save("cv_lab_size", e.target.value); est(); };
   $("#lb-n") && ($("#lb-n").onchange = () => est());
   const count = () => Number($("#lb-n")?.value || 1);
+  const unit = () => Number(st?.prices?.["gpt-image-2.5-flare"]?.[$("#lb-z").value]?.[$("#lb-q").value]);
   const est = () => {
-    const cost = Number(st?.prices?.["gpt-image-2.5-flare"]?.[$("#lb-z").value]?.[$("#lb-q").value]);
-    $("#lb-est").textContent = Number.isFinite(cost) ? `${count()} image(s) · ≈ $${(cost * count()).toFixed(3)}${mode === "txt2img" ? "" : " + reference"} · budget left $${Number(st?.remaining || 0).toFixed(3)}` : "";
+    const cost = unit();
+    $("#lb-est").textContent = Number.isFinite(cost) ? `${count()} image(s) · ≈ $${(cost * count()).toFixed(3)}${mode === "txt2img" ? "" : " + reference"}` : "";
     return Number.isFinite(cost) ? cost * count() : 0;
   };
   est();
@@ -394,7 +395,7 @@ function renderLab(){
       let err;
       if (mode === "txt2img") { labDna = hex(8); err = window.CVNative.genesisPhoneGenerateDna("gpt-image-2.5-flare", quality, size, prompt, true, labDna); }
       else { labDna = ""; err = window.CVNative.genesisPhoneStudio("gpt-image-2.5-flare", quality, size, prompt, true, "lab", JSON.stringify([ref])); }
-      if (err) { labWait = null; if (state()) state().textContent = err; break; }
+      if (err) { labWait = null; if (state()) state().textContent = `Stopped at image ${i}: ${err} (nothing was sent or charged)`; labRun.stop = true; toast(err, 7000); break; }
       const ev = await result;
       if (ev.type === "failed" && /OpenAI error 4\d\d/.test(ev.message || "")) { refused.push(`#${i}`); toast(`Image ${i}: refused by OpenAI, skipped.`, 4000); continue; }
       if (ev.type !== "generated") { if (state()) state().textContent = `Stopped at image ${i}: ${ev.message || ev.type}`; labRun.stop = true; break; }

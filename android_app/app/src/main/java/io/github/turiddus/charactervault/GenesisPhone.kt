@@ -217,9 +217,7 @@ object GenesisPhone {
         if (st.opt("uncertain") is JSONObject) throw IllegalStateException("A previous request is uncertain: check it below first.")
         val cost = estimate(ctx, model, quality, size)
         val reserve = cost * MARGIN
-        if (st.getDouble("budget") <= 0 || st.getDouble("daily") <= 0) throw IllegalStateException("Set a local budget and a daily limit first.")
-        if (reserve > st.getDouble("remaining") + 1e-9) throw IllegalStateException("Local budget exhausted (needs \$${"%.3f".format(Locale.US, reserve)}).")
-        if (reserve > st.getDouble("today_remaining") + 1e-9) throw IllegalStateException("Daily limit reached (needs \$${"%.3f".format(Locale.US, reserve)}).")
+        // 9.0.5: no local budget or daily limit: the OpenAI prepaid balance is the limit (spend is still recorded)
         val now = System.currentTimeMillis()
         val id = java.lang.Long.toHexString(now) + java.lang.Long.toHexString(java.util.Random().nextLong() and 0xffff)
         val job = JSONObject().put("id", id).put("ts", now / 1000).put("day", day(now))
