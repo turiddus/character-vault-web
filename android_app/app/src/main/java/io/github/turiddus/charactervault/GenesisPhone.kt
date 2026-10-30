@@ -45,6 +45,7 @@ object GenesisPhone {
     private val BASE = mapOf("low" to 0.0047, "medium" to 0.0110, "high" to 0.0424, "xhigh" to 0.0753, "max" to 0.1695)
     const val MARGIN = 1.25
     private const val ENDPOINT = "https://api.openai.com/v1/images/generations"
+    private const val EDITS = "https://api.openai.com/v1/images/edits"
     private const val ALIAS = "cv_genesis_openai_key_v1"
     private const val PREFS = "cv_genesis_phone"
     private const val MAX_ENTRIES = 400
@@ -207,7 +208,8 @@ object GenesisPhone {
     }
 
     /** Checks and writes the reservation; returns the job id. Throws with a readable message when not allowed. */
-    fun reserve(ctx: Context, model: String, quality: String, size: String, prompt: String, dna: String = ""): JSONObject = synchronized(lock) {
+    fun reserve(ctx: Context, model: String, quality: String, size: String, prompt: String, dna: String = "",
+                entity: String = ""): JSONObject = synchronized(lock) {
         if (model !in MODELS || quality !in QUALITIES || size !in SIZES) throw IllegalArgumentException("Invalid model, quality or size.")
         if (prompt.length < 40 || prompt.length > 30000) throw IllegalArgumentException("Invalid prompt.")
         if (!hasKey(ctx)) throw IllegalStateException("Save your OpenAI API key on this phone first.")
@@ -224,6 +226,7 @@ object GenesisPhone {
             .put("model", model).put("quality", quality).put("size", size)
             .put("status", "reserved").put("estimate", cost).put("reserve", reserve).put("upload", "none")
         if (Regex("^[0-9a-f]{8,32}$").matches(dna)) job.put("dna", dna)
+        if (Regex("^[A-Za-z0-9_.:-]{1,64}$").matches(entity)) job.put("entity", entity)
         val list = entries(ctx)
         list.put(job)
         store(ctx, list)
@@ -259,6 +262,7 @@ object GenesisPhone {
         update(ctx, e.getString("id")) { it.put("upload", status).put("upload_error", error.take(300)) }
     }
     fun uploadStatus(ctx: Context, name: String): String = find(ctx, name)?.optString("upload") ?: ""
+    fun entityFor(ctx: Context, name: String): String = find(ctx, name)?.optString("entity") ?: ""
 
     // ------------------------------------------------------------------ OpenAI Images API
     private fun costFromUsage(usage: JSONObject?): Double? {
@@ -275,16 +279,35 @@ object GenesisPhone {
     private fun readAll(stream: java.io.InputStream?): String = stream?.use { String(it.readBytes(), Charsets.UTF_8) } ?: ""
 
     /** Runs the paid request for a reserved job and stores the PNG. Returns the file name. */
-    fun generate(ctx: Context, job: JSONObject, prompt: String): String {
+    /** 9.0 Character Studio: multipart body for /images/edits with the character's reference images. */
+    private fun editsBody(job: JSONObject, prompt: String, refs: List<File>, boundary: String): ByteArray {
+        val out = ByteArrayOutputStream()
+        fun field(name: String, value: String) {
+            out.write("--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n".toByteArray(Charsets.UTF_8))
+        }
+        field("model", job.getString("model")); field("prompt", prompt); field("quality", job.getString("quality"))
+        field("size", job.getString("size")); field("n", "1"); field("output_format", "png")
+        refs.forEachIndexed { i, f ->
+            out.write(("--$boundary\r\nContent-Disposition: form-data; name=\"image[]\"; filename=\"ref$i.jpg\"\r\n" +
+                "Content-Type: image/jpeg\r\n\r\n").toByteArray(Charsets.UTF_8))
+            out.write(f.readBytes())
+            out.write("\r\n".toByteArray(Charsets.UTF_8))
+        }
+        out.write("--$boundary--\r\n".toByteArray(Charsets.UTF_8))
+        return out.toByteArray()
+    }
+
+    fun generate(ctx: Context, job: JSONObject, prompt: String, refs: List<File> = emptyList()): String {
         val key = loadKey(ctx) ?: throw IllegalStateException("The OpenAI key cannot be read: save it again.")
         val id = job.getString("id")
-        val body = JSONObject().put("model", job.getString("model")).put("prompt", prompt).put("n", 1)
+        val boundary = "cvstudio" + java.lang.Long.toHexString(System.nanoTime())
+        val body = if (refs.isEmpty()) JSONObject().put("model", job.getString("model")).put("prompt", prompt).put("n", 1)
             .put("size", job.getString("size")).put("quality", job.getString("quality")).put("output_format", "png")
-            .toString().toByteArray(Charsets.UTF_8)
-        val conn = URL(ENDPOINT).openConnection() as HttpsURLConnection
+            .toString().toByteArray(Charsets.UTF_8) else editsBody(job, prompt, refs, boundary)
+        val conn = URL(if (refs.isEmpty()) ENDPOINT else EDITS).openConnection() as HttpsURLConnection
         conn.requestMethod = "POST"; conn.doOutput = true; conn.connectTimeout = 30000; conn.readTimeout = 600000
         conn.setRequestProperty("Authorization", "Bearer $key")
-        conn.setRequestProperty("Content-Type", "application/json")
+        conn.setRequestProperty("Content-Type", if (refs.isEmpty()) "application/json" else "multipart/form-data; boundary=$boundary")
         conn.setFixedLengthStreamingMode(body.size)
         try {
             conn.connect()
@@ -318,8 +341,10 @@ object GenesisPhone {
         val name = "genesis_phone_${stamp}_${id.takeLast(4)}.png"
         val settings = "Steps: 1, Size: ${job.getString("size")}, Model: ${job.getString("model")}, " +
             "Quality: ${job.getString("quality")}, Version: Genesis phone ${BuildConfigCompatVersion.name(ctx)}" +
-            (if (job.optString("dna").isNotEmpty()) ", DNA: ${job.optString("dna")}" else "")
-        val png = withText(raw, listOf("parameters" to "$prompt\n$settings", "Software" to "Character Vault Genesis (phone)"))
+            (if (job.optString("dna").isNotEmpty()) ", DNA: ${job.optString("dna")}" else "") +
+            (if (job.optString("entity").isNotEmpty()) ", Character: ${job.optString("entity")}" else "")
+        val software = if (refs.isEmpty()) "Character Vault Genesis (phone)" else "Character Vault Studio (phone)"
+        val png = withText(raw, listOf("parameters" to "$prompt\n$settings", "Software" to software))
         File(dir(ctx), name).writeBytes(png)
         update(ctx, id) { e ->
             e.put("status", "done").put("cost", measured ?: e.optDouble("estimate", 0.0)).put("measured", measured != null)

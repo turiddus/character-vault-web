@@ -31,6 +31,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.WebViewAssetLoader
 import org.json.JSONObject
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.Executors
 
 /**
@@ -354,8 +355,11 @@ class MainActivity : EnglishActivity() {
             io.execute {
                 try {
                     DriveIO.retrying {
+                        val entity = GenesisPhone.entityFor(this, name)
+                        val props = mutableMapOf("cv_origin" to "android", "cv_genesis" to "phone")
+                        if (entity.isNotEmpty()) props["cv_character"] = entity   // 9.0 Character Studio
                         DriveIO.upload(token, target, name, "image/png", file.length(), { file.inputStream() },
-                            properties = mapOf("cv_origin" to "android", "cv_genesis" to "phone"))
+                            properties = props)
                     }
                     GenesisPhone.setUpload(this, name, "sent")
                     genesisEvent("sent", name, null)
@@ -553,6 +557,64 @@ class MainActivity : EnglishActivity() {
                 } finally {
                     genesisBusy = false
                     main.post { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+                }
+            }
+            return ""
+        }
+
+        /** 9.0 Character Studio: new image of an existing character from its reference images (Drive file ids). */
+        @JavascriptInterface fun genesisPhoneStudio(model: String, quality: String, size: String, prompt: String, autoSend: Boolean,
+                                                    entity: String, refsJson: String): String {
+            val ctx = this@MainActivity
+            val refIds = try { org.json.JSONArray(refsJson).let { a -> (0 until a.length()).map { a.getString(it) } } }
+                catch (_: Exception) { emptyList() }.filter { Regex("^[A-Za-z0-9_-]{10,128}$").matches(it) }.take(6)
+            if (refIds.isEmpty()) return "No reference image of this character is available."
+            val job: JSONObject = synchronized(this) {
+                if (genesisBusy) return "A generation is already running."
+                val reserved = try {
+                    GenesisPhone.reserve(ctx, model, quality, size, prompt, "", entity)
+                } catch (e: Exception) {
+                    return e.message ?: "Not allowed."
+                }
+                genesisBusy = true
+                reserved
+            }
+            main.post {
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                GoogleAuth.authorize(ctx, consent, true) { token, error ->
+                    val id = job.getString("id")
+                    if (token == null) {
+                        GenesisPhone.failed(ctx, id, "Google sign-in failed: $error")
+                        genesisBusy = false
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        genesisEvent("failed", null, "Google sign-in failed: $error", mapOf("entity" to entity))
+                        return@authorize
+                    }
+                    genesisIo.execute {
+                        try {
+                            val folder = File(cacheDir, "studio_refs").apply { mkdirs(); listFiles()?.forEach { it.delete() } }
+                            val refs = refIds.mapIndexedNotNull { i, fid ->
+                                try { File(folder, "ref$i.jpg").also { DriveIO.downloadToFile(token, fid, it) } } catch (_: Exception) { null }
+                            }
+                            if (refs.isEmpty()) throw IOException("The reference images could not be downloaded (nothing was sent).")
+                            val name = GenesisPhone.generate(ctx, job, prompt, refs)
+                            genesisBusy = false
+                            val sha = GenesisPhone.file(ctx, name)?.let { f ->
+                                java.security.MessageDigest.getInstance("SHA-256").digest(f.readBytes()).joinToString("") { "%02x".format(it) }
+                            } ?: ""
+                            genesisEvent("generated", name, null, mapOf("sha" to sha, "entity" to entity))
+                            if (autoSend) main.post { genesisSend(name) }
+                        } catch (e: GenesisPhone.Uncertain) {
+                            GenesisPhone.uncertain(ctx, id, e.message ?: "uncertain")
+                            genesisEvent("uncertain", null, e.message, mapOf("entity" to entity))
+                        } catch (e: Exception) {
+                            GenesisPhone.failed(ctx, id, e.message ?: e.javaClass.simpleName)
+                            genesisEvent("failed", null, e.message ?: e.javaClass.simpleName, mapOf("entity" to entity))
+                        } finally {
+                            genesisBusy = false
+                            main.post { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+                        }
+                    }
                 }
             }
             return ""
