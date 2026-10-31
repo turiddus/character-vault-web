@@ -33,8 +33,8 @@ android {
         applicationId = "io.github.turiddus.gothvault"
         minSdk = 28
         targetSdk = 35
-        versionCode = 100
-        versionName = "1.0.0"
+        versionCode = 102
+        versionName = "1.0.2"
         // Solo processori dei telefoni (ARM): l'APK è molto più leggero senza le librerie x86 degli emulatori.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
