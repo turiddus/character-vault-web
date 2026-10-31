@@ -11,14 +11,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
-      - name: Installed 9.0.5 (with an old RC2.7.8 hotfix file and an 8.1 Genesis guide) and a 9.0.6 payload
+      - name: Installed 9.0.6 (with an old RC2.7.8 hotfix file and an 8.1 Genesis guide) and a 9.0.7 payload
         shell: pwsh
         run: |
           $old = "$env:RUNNER_TEMP\AI & Co (test)\CharacterVault"
-          $new = "$env:RUNNER_TEMP\Download\CharacterVault_9.0.6"
+          $new = "$env:RUNNER_TEMP\Download\CharacterVault_9.0.7"
           New-Item -ItemType Directory -Force "$old\character_vault", "$old\Data\db", "$old\Library", "$new\character_vault" | Out-Null
           Set-Content "$old\main.py" 'print("old")'
-          Set-Content "$old\character_vault\__init__.py" '__version__ = "9.0.5"'
+          Set-Content "$old\character_vault\__init__.py" '__version__ = "9.0.6"'
           Set-Content "$old\GENESIS_MOBILE_GUIDA_IT.md" '# old guide'
           Set-Content "$old\INSTALLA_RC278_SYNC_611.bat" '@echo old hotfix'
           Set-Content "$old\START_NOTEBOOK_8GB.bat" '@echo launcher'
@@ -27,7 +27,7 @@ jobs:
           python mkdb.py "$old\Data\db\character_vault.sqlite3"
           if (-not (Test-Path "$old\Data\db\character_vault.sqlite3")) { throw "test catalog not created" }
           Set-Content "$new\main.py" 'print("new")'
-          Set-Content "$new\character_vault\__init__.py" '__version__ = "9.0.6"'
+          Set-Content "$new\character_vault\__init__.py" '__version__ = "9.0.7"'
           Copy-Item install_update.py, AGGIORNA_CHARACTER_VAULT.bat $new
           python -c "import hashlib,json,pathlib,sys; r=pathlib.Path(sys.argv[1]); files=['main.py','character_vault/__init__.py']; json.dump({f: hashlib.sha256((r/f).read_bytes()).hexdigest() for f in files}, open(r/'SOURCE_MANIFEST_SHA256.json','w'))" "$new"
           [IO.File]::WriteAllText("$env:RUNNER_TEMP\answers.txt", "$old`r`nAGGIORNA`r`n`r`n")
