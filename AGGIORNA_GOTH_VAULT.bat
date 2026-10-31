@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
-title Goth Vault 1.1.0 - aggiornamento
+title Goth Vault 1.1.1 - aggiornamento
 echo.
 echo  ============================================================
-echo    GOTH VAULT 1.1.0 - AGGIORNAMENTO DEL PROGRAMMA
+echo    GOTH VAULT 1.1.1 - AGGIORNAMENTO DEL PROGRAMMA
 echo  ============================================================
 echo  Prima: chiudi Goth Vault su questo PC.
 echo  Restano intatti: Data, Library, catalogo, accesso Google, chiave Android, Python privato.

@@ -1441,7 +1441,7 @@ function renderSettings(){
       const al = h.alerts || [];
       return `<div class="panel"><h4>Archive health</h4><div class="${al.length ? "lb-warn" : "muted"}">${al.length ? "⚠ " + al.map(esc).join(" · ") : "✓ All good"}</div>
         <div class="muted">${(h.lines || []).map(esc).join("<br>")}<br>Checked ${esc(String(h.checked).replace("T", " ").slice(0, 16))} UTC on the PC</div></div>`; })()}
-    <div class="panel"><h4>Android synchronization · Goth Vault 1.1.0</h4>
+    <div class="panel"><h4>Android synchronization · Goth Vault 1.1.1</h4>
       <div class="muted">Checks for new gallery content and portrait-crop bundles every 40 seconds while the Android app is open. Incoming uploads go to the folder configured in the published Drive index.</div>
       <div class="muted" style="margin-top:8px">Gallery: ${S.index.images.length} records · cropped previews: ${S.index.images.filter(x => Array.isArray(x.k) && x.k.length === 3).length} · pending crops: ${Number(S.index.missing_thumbs || 0)}</div></div>
     <div class="panel"><h4>Desktop General Log</h4><div class="muted">Read-only activity from your home PC, updated through your private Drive archive about every 30 seconds while the desktop is running. Sensitive details are hidden.</div>

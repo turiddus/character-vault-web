@@ -9,7 +9,7 @@ const SIZES = [["1152x2048", "Vertical 9:16"], ["1024x1536", "Vertical 2:3"], ["
   ["1536x1024", "Horizontal 3:2"], ["1024x1024", "Square"]];
 const AGES = ["18–24", "25–34", "35–44", "45–54", "55–64", "65–70"];
 let run = null, wait = null, dna = "", results = [];
-const session = {subgenre: [], category: [], city: []};
+const session = {subgenre: [], category: [], city: [], setting: []};
 const hex = n => Array.from(crypto.getRandomValues(new Uint8Array(n))).map(b => b.toString(16).padStart(2, "0")).join("");
 const canCreate = () => typeof NATIVE !== "undefined" && NATIVE && window.CVNative && typeof window.CVNative.genesisPhoneGenerateDna === "function";
 const ld = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -18,7 +18,7 @@ function goth(){ return (S.index && S.index.goth) || {}; }
 function recent(){
   const r = goth().recent || {};
   const out = {};
-  for (const k of ["subgenre", "category", "city"]) out[k] = session[k].slice().reverse().concat(r[k] || []);
+  for (const k of ["subgenre", "category", "city", "setting"]) out[k] = session[k].slice().reverse().concat(r[k] || []);
   return out;
 }
 function stockScene(){
@@ -122,7 +122,7 @@ async function go_(){
     if (srcs[i] === "codex" && !stocked) fallback++;
     if (stocked) { prompt = stocked.prompt; fields = stocked.f || {}; caption = `${G.SUBJECT_LABELS[fields.subject] || ""} · ${fields.subgenre || "Codex scene"} · ${fields.city || ""} · Codex`; }
     else { fields = G.pick(filters, recent(), goth().mix); prompt = G.compose(fields); caption = `${G.SUBJECT_LABELS[fields.subject] || ""} · ${fields.subgenre} · ${fields.city}, ${fields.country} · age ${fields.age} · database`; }
-    for (const k of ["subgenre", "category", "city"]) if (fields[k]) session[k].push(fields[k]);
+    for (const k of ["subgenre", "category", "city", "setting"]) if (fields[k]) session[k].push(fields[k]);
     state(`Image ${i + 1}/${n}… (20 s – 3 min, keep the app open)`);
     const result = new Promise(r => { wait = r; });
     dna = hex(8);

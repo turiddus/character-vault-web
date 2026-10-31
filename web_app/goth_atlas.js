@@ -15,6 +15,34 @@ const PERSON_M = ["age", "skin", "body", "face", "haircolor", "hair", "facial_ha
   "expression", "garment", "layer", "footwear", "accessory", "palette", "subgenre"];
 const COUPLE_KEYS = ["city", "country", "setting", "district", "couple_action", "detail", "crowd", "time", "season", "weather",
   "couple_mood", "relationship", "framing", "phone", "angle", "light", "imp1", "imp2"];
+const STOP = new Set(("a an the in on at of with and to for from by near into onto over under around her his their she he " +
+  "they is are it its this that some small little big large old new local neighbourhood neighborhood ordinary everyday " +
+  "quiet busy late early just one two very while during after before inside outside").split(" "));
+const SYN = {shop: "store", laundrette: "laundromat", coffeehouse: "cafe", coffeeshop: "cafe", evening: "night",
+  nighttime: "night", midnight: "night", grocery: "supermarket", flat: "apartment", pub: "bar", tavern: "bar",
+  train: "rail", railway: "rail", tram: "rail", subway: "metro", underground: "metro"};
+function concept(text){
+  const t = String(text ?? "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+  const out = new Set();
+  for (let w of t.replace(/[^a-z]+/g, " ").split(" ").filter(Boolean)) {
+    w = SYN[w] || w;
+    if (STOP.has(w) || w.length < 3) continue;
+    if (w.endsWith("ies") && w.length > 4) w = w.slice(0, -3) + "y";
+    else if (w.endsWith("ing") && w.length > 5) w = w.slice(0, -3);
+    else if (w.endsWith("ed") && w.length > 4) w = w.slice(0, -2);
+    else if (w.endsWith("s") && !w.endsWith("ss") && w.length > 3) w = w.slice(0, -1);
+    w = SYN[w] || w;
+    if (!STOP.has(w)) out.add(w);
+  }
+  return out;
+}
+function similar(a, b, threshold = 0.75){
+  const A = a instanceof Set ? a : concept(a), B = b instanceof Set ? b : concept(b);
+  if (!A.size || !B.size) return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+  let inter = 0; A.forEach(x => { if (B.has(x)) inter++; });
+  const jac = inter / (A.size + B.size - inter), small = Math.min(A.size, B.size);
+  return jac >= threshold || (small >= 2 && inter === small && jac >= 0.6);
+}
 function load(){
   if (B) return Promise.resolve(atlas());
   if (!loading) loading = fetch("goth_atlas.json").then(r => r.json()).then(j => { B = j; return atlas(); }).catch(e => { loading = null; throw e; });
@@ -81,7 +109,10 @@ function pick(filters, recent, mix){
   let subs = a.subgenres.filter(s => !f.subgenre || s.n === f.subgenre); if (!subs.length) subs = a.subgenres;
   const sub = leastUsed(subs, s => s.n, r.subgenre, 6);
   let cats = a.categories.filter(c => c.scenes.length && (!f.category || c.n === f.category)); if (!cats.length) cats = a.categories.filter(c => c.scenes.length);
-  const cat = leastUsed(cats, c => c.n, r.category, 8), scene = ch(cat.scenes);
+  const cat = leastUsed(cats, c => c.n, r.category, 8);
+  const rc = (r.setting || []).slice(0, 30).map(concept);
+  const fresh = rc.length ? cat.scenes.filter(sc => { const c = concept(sc.s); return !rc.some(x => similar(c, x)); }) : [];
+  const scene = ch(fresh.length ? fresh : cat.scenes);
   let cs = a.cities.filter(c => (!f.continent || c[0] === f.continent) && (!f.country || c[1] === f.country)); if (!cs.length) cs = a.cities;
   const city = leastUsed(cs, c => c[2], r.city, 40);
   const imps = shuffle(P.imp.slice()).slice(0, 2);
@@ -141,7 +172,7 @@ function compose(fields){
   return fill(a.master, repl);
 }
 window.__gothAtlas = {
-  load, ready: () => !!B, pick, compose, merge, SUBJECTS, SUBJECT_LABELS, DEFAULT_MIX,
+  load, ready: () => !!B, pick, compose, merge, concept, similar, SUBJECTS, SUBJECT_LABELS, DEFAULT_MIX,
   subgenres: () => (B ? atlas().subgenres.map(s => s.n) : []),
   categories: () => (B ? atlas().categories.map(c => c.n) : []),
   continents: () => (B ? [...new Set(atlas().cities.map(c => c[0]))] : []),
