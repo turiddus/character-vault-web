@@ -41,7 +41,7 @@ object GenesisPhone {
     const val DIR = "genesis_phone"
     val MODELS = listOf("gpt-image-2.5-flare", "gpt-image-2.5-sunburst")
     val QUALITIES = listOf("low", "medium", "high", "xhigh", "max")
-    val SIZES = listOf("1152x2048", "1024x1536")
+    val SIZES = listOf("1152x2048", "1024x1536", "2048x1152", "1536x1024", "1024x1024", "1536x1536")
     private val BASE = mapOf("low" to 0.0047, "medium" to 0.0110, "high" to 0.0424, "xhigh" to 0.0753, "max" to 0.1695)
     const val MARGIN = 1.25
     private const val ENDPOINT = "https://api.openai.com/v1/images/generations"

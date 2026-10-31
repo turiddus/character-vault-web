@@ -111,7 +111,7 @@ const canCreate = () => NATIVE && typeof window.CVNative.genesisPhoneStudio === 
 
 function tabs(active){
   return `<div class="chips" style="padding-top:0"><button class="chip ${active === "studio" ? "on" : ""}" data-st="studio">Studio</button>
-    <button class="chip ${active === "lab" ? "on" : ""}" data-st="lab">Photo Lab</button>
+    <button class="chip ${active === "lab" ? "on" : ""}" data-st="lab">Image Studio</button>
     <button class="chip ${active === "explore" ? "on" : ""}" data-st="explore">Explore</button></div>`;
 }
 function bindTabs(){ document.querySelectorAll("[data-st]").forEach(b => b.onclick = () => go(b.dataset.st === "studio" ? "#/studio" : `#/studio/~${b.dataset.st}`)); }
@@ -283,9 +283,10 @@ function bindPerspectives(e, st){
   };
 }
 
-/* ------------------------------------------------------------------ 9.0.4 Photo Lab (same master prompts as the PC) */
+/* ------------------------------------------------------------------ 9.1.0 Image Studio (same prompts and presets as the PC) */
 let labWait = null, labDna = "", labRun = null, labSource = null;
 const LAB_SIZES = ["1152x2048", "1024x1536"];
+const LAB_MODELS = ["gpt-image-2.5-flare", "gpt-image-2.5-sunburst"];
 const hex = n => Array.from(crypto.getRandomValues(new Uint8Array(n))).map(b => b.toString(16).padStart(2, "0")).join("");
 async function labFolder(){
   const root = rootId();
@@ -319,45 +320,110 @@ function labSourceHtml(){
     <label class="btn">${ico("image")} Choose photo<input type="file" accept="image/*" id="lb-file" hidden></label>
     <button class="btn" id="lb-gal">${ico("grid")} From the gallery</button></div></div><div id="lb-pick"></div>`;
 }
+function labPresetsHtml(L, mode){
+  const sel = new Set(load("cv_lab_presets", [])), qx = (load("cv_lab_pq", "") || "").toLowerCase(), cat = load("cv_lab_pcat", "");
+  const cats = L.categories(mode);
+  const chips = cats.filter(c => !cat || c.name === cat).flatMap(c => c.presets
+    .filter(p => !qx || p.label.toLowerCase().includes(qx) || p.text.toLowerCase().includes(qx) || c.name.toLowerCase().includes(qx))
+    .map(p => `<button class="chip ${sel.has(p.id) ? "on" : ""}" data-pr="${esc(p.id)}" title="${esc(c.name + " · " + p.text)}">${esc(p.label)}</button>`)).join("");
+  const active = [...sel].map(id => L.preset(id)).filter(p => p && (!p.modes.length || p.modes.includes(mode)));
+  return `<details class="lb-presets" ${load("cv_lab_popen", false) ? "open" : ""}><summary>Presets · ${active.length ? esc(active.map(p => p.label).join(", ")) : "none (master defaults)"}</summary>
+    <div class="row"><input class="txt" id="lb-pq" placeholder="Search presets…" value="${esc(load("cv_lab_pq", ""))}">
+    <select id="lb-pcat"><option value="">All</option>${cats.map(c => `<option ${c.name === cat ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
+    <p class="muted">Light, camera, color, focus and framing replace the master's default (one each); the others add a line.</p>
+    <div class="chips sx-wrap lb-chips">${chips || '<span class="muted">No preset found.</span>'}</div>
+    ${sel.size ? `<button class="btn" id="lb-pclear">Clear presets</button>` : ""}</details>`;
+}
+function labActive(L, mode){
+  return load("cv_lab_presets", []).filter(id => { const p = L.preset(id); return p && (!p.modes.length || p.modes.includes(mode)); });
+}
+function labTogglePreset(L, id){
+  const p = L.preset(id); if (!p) return;
+  let sel = load("cv_lab_presets", []);
+  if (sel.includes(id)) sel = sel.filter(x => x !== id);
+  else { if (p.slot !== "extra" && p.slot !== "change") sel = sel.filter(x => (L.preset(x) || {}).slot !== p.slot); sel.push(id); }
+  save("cv_lab_presets", sel);
+}
+let labResults = [];
 function renderLab(){
   const L = window.__cvLab;
-  if (!L?.ready()) { mountPage(`${tabs("lab")}<div class="empty">Loading Photo Lab…</div>`, "Photo Lab"); bindTabs(); L?.load().then(() => S.view === "studio" && renderLab()); return; }
-  const mode = load("cv_lab_mode", "txt2img"), q = load("cv_sx_quality", "low"), z = load("cv_lab_size", LAB_SIZES[0]);
+  if (!L?.ready()) { mountPage(`${tabs("lab")}<div class="empty">Loading Image Studio…</div>`, "Image Studio"); bindTabs(); L?.load().then(() => S.view === "studio" && renderLab()); return; }
+  const mode = load("cv_lab_mode", "txt2img"), q = load("cv_sx_quality", "low"), model = load("cv_lab_model", LAB_MODELS[0]);
+  let z = load("cv_lab_size", LAB_SIZES[0]);
+  if (!L.FORMATS.some(f => f[2] === z)) z = LAB_SIZES[0];
+  const ori = L.orientation(z);
   let st = canCreate() ? (() => { try { return JSON.parse(window.CVNative.genesisPhoneState()); } catch (x) { return null; } })() : null;
-  const help = {txt2img: "Write only what you want: the phone wraps it in your realistic TXT2IMG master prompt.",
-    img2img: "The reference is remastered as a modern real photograph with the TXT2IMG master prompt.",
-    restore: "Old, damaged or black-and-white photo → modern full-color photograph (restoration master prompt).",
+  const help = {txt2img: "Describe what you want to see: the master prompt adds realism, presets add light, camera, setting…",
+    img2img: "Edit or remaster a photo: write what to change (empty = modern photo of the same scene).",
+    restore: "Old, damaged or black-and-white photo → modern full-color photograph.",
     extract: "Every character of the scene becomes its own realistic full-body photo, in a coherent and fully sharp environment."}[mode];
-  const body = mode === "txt2img"
-    ? `<textarea class="txt" id="lb-text" rows="4" placeholder="e.g. an old fisherman mending nets on a pier at dawn">${esc(load("cv_lab_text", ""))}</textarea>
-       <label class="muted">Images</label><select id="lb-n">${[1, 2, 3, 4].map(n => `<option>${n}</option>`).join("")}</select>`
-    : labSourceHtml() + (mode === "img2img" ? `<input class="txt" id="lb-text" placeholder="Optional: what you want (e.g. 'same woman, rainy street')">`
-      : mode === "restore" ? `<input class="txt" id="lb-text" placeholder="Optional note (e.g. 'the dress was dark blue')">`
-      : `<label class="muted">Characters (counted from the left)</label><select id="lb-n">${Array.from({length: L.MAX_EXTRACT}, (_, i) => `<option>${i + 1}</option>`).join("")}</select>
-         <textarea class="txt" id="lb-notes" rows="3" placeholder="Optional, one line per character in the same order (e.g. 'the woman in the red coat')"></textarea>`);
-  mountPage(`${tabs("lab")}<div class="panel" id="lb"><h4>Photo Lab</h4>
+  const nOpts = mode === "extract" ? L.MAX_EXTRACT : 4;
+  const body = (mode === "txt2img"
+    ? `<textarea class="txt" id="lb-text" rows="4" placeholder="e.g. an old fisherman mending nets on a pier">${esc(load("cv_lab_text", ""))}</textarea>`
+    : labSourceHtml() + (mode === "img2img" ? `<input class="txt" id="lb-text" placeholder="What to change (e.g. 'put her in a rainy street')">`
+      : mode === "restore" ? `<input class="txt" id="lb-text" placeholder="Optional note (e.g. 'the dress was dark blue')">` : ""))
+    + `<label class="muted">${mode === "extract" ? "Characters (counted from the left)" : "Variants"}</label><select id="lb-n">${Array.from({length: nOpts}, (_, i) => `<option>${i + 1}</option>`).join("")}</select>`
+    + (mode === "extract" ? `<textarea class="txt" id="lb-notes" rows="3" placeholder="Optional, one line per character in the same order (e.g. 'the woman in the red coat')"></textarea>` : "");
+  const last = labResults[labResults.length - 1];
+  mountPage(`${tabs("lab")}<div class="panel" id="lb"><h4>Image Studio</h4>
     <div class="chips sx-wrap">${Object.entries(L.LABELS).map(([k, v]) => `<button class="chip ${k === mode ? "on" : ""}" data-lm="${k}">${esc(v)}</button>`).join("")}</div>
-    <p class="muted">${esc(help)} Every result goes to the gallery: the PC archives it and Codex catalogs it.</p>
+    <p class="muted">${esc(help)} Every result goes to the gallery: the PC archives it (Drive + NAS) and Codex catalogs it.</p>
     ${body}
-    <label class="muted">Quality</label><select id="lb-q">${QUALITIES.map(x => `<option value="${x}" ${x === q ? "selected" : ""}>${x.toUpperCase()}</option>`).join("")}</select>
-    <label class="muted">Resolution</label><select id="lb-z">${LAB_SIZES.map(x => `<option value="${x}" ${x === z ? "selected" : ""}>${x.replace("x", " × ")}${x === LAB_SIZES[0] ? " · 9:16" : ""}</option>`).join("")}</select>
+    <label class="muted">Format</label>
+    <div class="chips">${[["portrait", "Vertical"], ["landscape", "Horizontal"], ["square", "Square"]].map(([k, v]) => `<button class="chip ${k === ori ? "on" : ""}" data-or="${k}">${v}</button>`).join("")}</div>
+    <select id="lb-z">${L.FORMATS.filter(f => f[0] === ori).map(f => `<option value="${f[2]}" ${f[2] === z ? "selected" : ""}>${esc(f[1])} · ${f[2].replace("x", " × ")}</option>`).join("")}</select>
+    ${labPresetsHtml(L, mode)}
+    <div class="lb-grid2">
+      <div><label class="muted">Model</label><select id="lb-m">${LAB_MODELS.map(x => `<option value="${x}" ${x === model ? "selected" : ""}>${x.replace("gpt-image-2.5-", "")}${x.endsWith("flare") ? " · fast" : " · best quality"}</option>`).join("")}</select></div>
+      <div><label class="muted">Quality</label><select id="lb-q">${QUALITIES.map(x => `<option value="${x}" ${x === q ? "selected" : ""}>${x.toUpperCase()}</option>`).join("")}</select></div>
+      <div><label class="muted">Prompt style</label><select id="lb-st"><option value="compact" ${L.style() === "compact" ? "selected" : ""}>Compact</option><option value="classic" ${L.style() === "classic" ? "selected" : ""}>Classic (long)</option></select></div>
+    </div>
+    <details class="lb-final"><summary>Final prompt</summary><pre id="lb-prompt"></pre></details>
     <div class="muted" id="lb-est"></div>
     ${canCreate() ? `<div class="row"><button class="btn primary" id="lb-go" ${!st?.has_key || labRun ? "disabled" : ""}>${ico("image")} Create (paid)</button>
       <button class="btn" id="lb-stop" style="display:none">Stop after this one</button></div>
       <div class="muted" id="lb-state">${!st?.has_key ? "Save your OpenAI key in Genesis › Create on this phone first." : labRun ? "Running…" : ""}</div>`
-      : `<p class="muted">Available in the Android app with an OpenAI key (Genesis › Create on this phone), or in Photo Lab on the PC.</p>`}
-    <div class="sx-res" id="lb-res"></div></div>`, "Photo Lab");
+      : `<p class="muted">Available in the Android app with an OpenAI key (Genesis › Create on this phone), or in Image Studio on the PC.</p>`}
+    <div class="lb-big" id="lb-big">${last ? `<img alt="" src="/genesis-phone/${encodeURIComponent(last)}"><button class="btn" id="lb-edit">${ico("image")} Edit this</button>` : ""}</div>
+    <div class="sx-res" id="lb-res">${labResults.map(n => `<img alt="" data-n="${esc(n)}" src="/genesis-phone/${encodeURIComponent(n)}">`).join("")}</div></div>`, "Image Studio");
   bindTabs();
   document.querySelectorAll("#lb img[data-id]").forEach(img => io.observe(img));
   document.querySelectorAll("[data-lm]").forEach(b => b.onclick = () => { save("cv_lab_mode", b.dataset.lm); renderLab(); });
+  document.querySelectorAll("[data-or]").forEach(b => b.onclick = () => { const f = L.FORMATS.find(x => x[0] === b.dataset.or); if (f) save("cv_lab_size", f[2]); renderLab(); });
+  document.querySelectorAll("[data-pr]").forEach(b => b.onclick = () => { labTogglePreset(L, b.dataset.pr); save("cv_lab_popen", true); renderLab(); });
+  if ($("#lb-pclear")) $("#lb-pclear").onclick = () => { save("cv_lab_presets", []); renderLab(); };
+  $("#lb-pq").onchange = e => { save("cv_lab_pq", e.target.value); save("cv_lab_popen", true); renderLab(); };
+  $("#lb-pcat").onchange = e => { save("cv_lab_pcat", e.target.value); save("cv_lab_popen", true); renderLab(); };
+  $(".lb-presets").ontoggle = e => save("cv_lab_popen", e.target.open);
   $("#lb-q").onchange = e => { save("cv_sx_quality", e.target.value); est(); };
+  $("#lb-m").onchange = e => { save("cv_lab_model", e.target.value); est(); };
   $("#lb-z").onchange = e => { save("cv_lab_size", e.target.value); est(); };
-  $("#lb-n") && ($("#lb-n").onchange = () => est());
+  $("#lb-st").onchange = e => { L.setStyle(e.target.value); est(); };
+  $("#lb-n").onchange = () => est();
+  ["#lb-text", "#lb-notes"].forEach(s => $(s) && ($(s).oninput = () => est()));
+  document.querySelectorAll("#lb-res img[data-n]").forEach(img => img.onclick = () => {
+    labResults = labResults.filter(n => n !== img.dataset.n).concat([img.dataset.n]); renderLab(); });
+  if ($("#lb-edit")) $("#lb-edit").onclick = async () => {
+    try {
+      const name = labResults[labResults.length - 1], blob = await (await fetch(`/genesis-phone/${encodeURIComponent(name)}`)).blob();
+      labSource = {kind: "file", file: new File([blob], name, {type: blob.type || "image/png"}), url: URL.createObjectURL(blob), id: ""};
+      save("cv_lab_mode", "img2img"); renderLab(); window.scrollTo(0, 0);
+    } catch (e) { toast("Edit: " + (e.message || e), 5000); }
+  };
   const count = () => Number($("#lb-n")?.value || 1);
-  const unit = () => Number(st?.prices?.["gpt-image-2.5-flare"]?.[$("#lb-z").value]?.[$("#lb-q").value]);
+  const size = () => $("#lb-z").value;
+  const prompts = () => {
+    const text = $("#lb-text")?.value || "", notes = ($("#lb-notes")?.value || "").split("\n"), ids = labActive(L, mode), n = count();
+    return Array.from({length: n}, (_, k) => mode === "extract"
+      ? L.compose("extract", "", ids, {index: k + 1, count: n, note: notes[k] || "", size: size()})
+      : L.compose(mode, mode === "restore" ? "" : text, ids, {note: mode === "restore" ? text : "", size: size()}));
+  };
+  const unit = () => Number(st?.prices?.[$("#lb-m").value]?.[size()]?.[$("#lb-q").value]);
   const est = () => {
-    const cost = unit();
-    $("#lb-est").textContent = Number.isFinite(cost) ? `${count()} image(s) · ≈ $${(cost * count()).toFixed(3)}${mode === "txt2img" ? "" : " + reference"}` : "";
+    const cost = unit(), p = prompts();
+    $("#lb-prompt").textContent = p[0] || "";
+    $("#lb-est").textContent = (Number.isFinite(cost) ? `${count()} image(s) · ≈ $${(cost * count()).toFixed(3)}${mode === "txt2img" ? "" : " + reference"} · ` : "")
+      + `prompt ${(p[0] || "").split(/\s+/).filter(Boolean).length} words`;
     return Number.isFinite(cost) ? cost * count() : 0;
   };
   est();
@@ -374,13 +440,12 @@ function renderLab(){
   if (!canCreate() || !$("#lb-go")) return;
   $("#lb-stop").onclick = () => { if (labRun) labRun.stop = true; $("#lb-stop").disabled = true; };
   $("#lb-go").onclick = async () => {
-    if (mode === "txt2img" && !$("#lb-text").value.trim()) return toast("Write what you want to see.", 3000);
+    if (mode === "txt2img" && !$("#lb-text").value.trim() && !labActive(L, mode).length) return toast("Write what you want to see.", 3000);
     if (mode !== "txt2img" && !labSource) return toast("Choose the image first.", 3000);
-    const n = mode === "txt2img" || mode === "extract" ? count() : 1, total = est();
-    const quality = $("#lb-q").value, size = $("#lb-z").value;
-    if (!await ask(`Create ${n} ${quality.toUpperCase()} image(s) with GPT Image? One paid OpenAI request each (≈ $${total.toFixed(3)}), one after another.`)) return;
-    const text = $("#lb-text")?.value || "", notes = ($("#lb-notes")?.value || "").split("\n");
-    if (mode === "txt2img") save("cv_lab_text", text);
+    const all = prompts(), n = all.length, total = est();
+    const quality = $("#lb-q").value, sz = size(), mdl = $("#lb-m").value;
+    if (!await ask(`Create ${n} ${quality.toUpperCase()} image(s) with ${mdl} (${sz})? One paid OpenAI request each (≈ $${total.toFixed(3)}), one after another.`)) return;
+    if (mode === "txt2img") save("cv_lab_text", $("#lb-text").value);
     const state = () => $("#lb-state");
     labRun = {stop: false, done: 0}; const refused = [];
     $("#lb-go").disabled = true; $("#lb-stop").style.display = ""; $("#lb-stop").disabled = false;
@@ -389,23 +454,26 @@ function renderLab(){
     catch (e) { labRun = null; $("#lb-go").disabled = false; $("#lb-stop").style.display = "none"; return toast("Reference: " + (e.message || e), 6000); }
     for (let i = 1; i <= n; i++) {
       if (labRun.stop) break;
-      const prompt = mode === "txt2img" ? L.txt2img(text) : mode === "img2img" ? L.img2img(text) : mode === "restore" ? L.restore(text) : L.extract(i, n, notes[i - 1] || "");
+      const prompt = all[i - 1];
       if (state()) state().textContent = `Image ${i}/${n}… (20 s – 3 min, keep the app open)`;
       const result = new Promise(r => { labWait = r; });
       let err;
-      if (mode === "txt2img") { labDna = hex(8); err = window.CVNative.genesisPhoneGenerateDna("gpt-image-2.5-flare", quality, size, prompt, true, labDna); }
-      else { labDna = ""; err = window.CVNative.genesisPhoneStudio("gpt-image-2.5-flare", quality, size, prompt, true, "lab", JSON.stringify([ref])); }
+      if (mode === "txt2img") { labDna = hex(8); err = window.CVNative.genesisPhoneGenerateDna(mdl, quality, sz, prompt, true, labDna); }
+      else { labDna = ""; err = window.CVNative.genesisPhoneStudio(mdl, quality, sz, prompt, true, "lab", JSON.stringify([ref])); }
       if (err) { labWait = null; if (state()) state().textContent = `Stopped at image ${i}: ${err} (nothing was sent or charged)`; labRun.stop = true; toast(err, 7000); break; }
       const ev = await result;
       if (ev.type === "failed" && /OpenAI error 4\d\d/.test(ev.message || "")) { refused.push(`#${i}`); toast(`Image ${i}: refused by OpenAI, skipped.`, 4000); continue; }
       if (ev.type !== "generated") { if (state()) state().textContent = `Stopped at image ${i}: ${ev.message || ev.type}`; labRun.stop = true; break; }
       labRun.done++;
+      labResults.push(ev.name);
+      const big = $("#lb-big");
+      if (big) big.innerHTML = `<img alt="" src="/genesis-phone/${encodeURIComponent(ev.name)}">`;
       $("#lb-res")?.insertAdjacentHTML("beforeend", `<img alt="" src="/genesis-phone/${encodeURIComponent(ev.name)}">`);
     }
     const done = labRun.done, stopped = labRun.stop; labRun = null; labDna = "";
-    if ($("#lb-go")) { $("#lb-go").disabled = false; $("#lb-stop").style.display = "none"; }
-    if (state() && !(stopped && state().textContent.startsWith("Stopped")))
-      state().textContent = `${done} of ${n} created and sent: the PC archives them and Codex catalogs them.` + (refused.length ? ` Refused by OpenAI: ${refused.join(", ")}.` : "");
+    const msg = stopped && state()?.textContent.startsWith("Stopped") ? state().textContent
+      : `${done} of ${n} created and sent: the PC archives them and Codex catalogs them.` + (refused.length ? ` Refused by OpenAI: ${refused.join(", ")}.` : "");
+    if (S.view === "studio") { renderLab(); if (state()) state().textContent = msg; }
   };
 }
 

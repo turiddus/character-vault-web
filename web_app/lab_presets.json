@@ -1,0 +1,792 @@
+{
+ "version": 1,
+ "categories": [
+  {
+   "name": "Framing",
+   "slot": "framing",
+   "modes": [],
+   "presets": [
+    {
+     "id": "fram-fullfigure",
+     "label": "Full figure",
+     "text": "full figure from head to feet, eye-level camera"
+    },
+    {
+     "id": "fram-halfbody",
+     "label": "Half body",
+     "text": "half-body portrait from the waist up, eye-level camera"
+    },
+    {
+     "id": "fram-headshoulders",
+     "label": "Head & shoulders",
+     "text": "close-up portrait of head and shoulders, eye-level camera"
+    },
+    {
+     "id": "fram-extremecloseup",
+     "label": "Extreme close-up",
+     "text": "extreme close-up of the face, filling the frame"
+    },
+    {
+     "id": "fram-threequarterview",
+     "label": "Three-quarter view",
+     "text": "full figure in a three-quarter view, body turned slightly away from the camera"
+    },
+    {
+     "id": "fram-profile",
+     "label": "Profile",
+     "text": "full figure in strict side profile"
+    },
+    {
+     "id": "fram-frombehind",
+     "label": "From behind",
+     "text": "full figure seen from behind, looking away from the camera"
+    },
+    {
+     "id": "fram-lowanglehero",
+     "label": "Low angle hero",
+     "text": "full figure from a low camera angle looking up, heroic and imposing"
+    },
+    {
+     "id": "fram-highangle",
+     "label": "High angle",
+     "text": "full figure from a high camera angle looking down"
+    },
+    {
+     "id": "fram-topdown",
+     "label": "Top-down",
+     "text": "seen directly from above, top-down view"
+    },
+    {
+     "id": "fram-wideestablishing",
+     "label": "Wide establishing",
+     "text": "wide establishing shot, the people small in a large environment"
+    },
+    {
+     "id": "fram-overtheshoulder",
+     "label": "Over the shoulder",
+     "text": "over-the-shoulder view, a second person blurred in the foreground"
+    },
+    {
+     "id": "fram-centeredsymmetry",
+     "label": "Centered symmetry",
+     "text": "perfectly centered, symmetrical composition, full figure"
+    },
+    {
+     "id": "fram-ruleofthirds",
+     "label": "Rule of thirds",
+     "text": "full figure placed on the left third of the frame with open space on the right"
+    }
+   ]
+  },
+  {
+   "name": "Camera & lens",
+   "slot": "camera",
+   "modes": [],
+   "presets": [
+    {
+     "id": "came-modernfullframe",
+     "label": "Modern full-frame",
+     "text": "shot on a modern full-frame camera"
+    },
+    {
+     "id": "came-mediumformat",
+     "label": "Medium format",
+     "text": "shot on a medium-format digital camera, very high detail"
+    },
+    {
+     "id": "came-35mmstreet",
+     "label": "35mm street",
+     "text": "35mm lens, documentary street photography"
+    },
+    {
+     "id": "came-50mmnatural",
+     "label": "50mm natural",
+     "text": "50mm lens, natural human perspective"
+    },
+    {
+     "id": "came-85mmportrait",
+     "label": "85mm portrait",
+     "text": "85mm portrait lens, flattering compression"
+    },
+    {
+     "id": "came-135mmcompressed",
+     "label": "135mm compressed",
+     "text": "135mm telephoto lens, strongly compressed background"
+    },
+    {
+     "id": "came-wide24mm",
+     "label": "Wide 24mm",
+     "text": "24mm wide-angle lens, environment visible around the subject"
+    },
+    {
+     "id": "came-ultrawide14mm",
+     "label": "Ultra-wide 14mm",
+     "text": "14mm ultra-wide lens, dramatic perspective"
+    },
+    {
+     "id": "came-macro",
+     "label": "Macro",
+     "text": "macro lens, tiny details large and crisp"
+    },
+    {
+     "id": "came-smartphone",
+     "label": "Smartphone",
+     "text": "casual smartphone photo, natural and unposed"
+    },
+    {
+     "id": "came-disposablecamera",
+     "label": "Disposable camera",
+     "text": "disposable film camera with direct flash"
+    },
+    {
+     "id": "came-polaroid",
+     "label": "Polaroid",
+     "text": "instant Polaroid photo with soft contrast"
+    },
+    {
+     "id": "came-droneaerial",
+     "label": "Drone aerial",
+     "text": "aerial photo taken by a drone"
+    },
+    {
+     "id": "came-securitycamera",
+     "label": "Security camera",
+     "text": "high-mounted security camera view"
+    },
+    {
+     "id": "came-fashioneditorial",
+     "label": "Fashion editorial",
+     "text": "high-end fashion editorial photography"
+    },
+    {
+     "id": "came-photojournalism",
+     "label": "Photojournalism",
+     "text": "award-winning photojournalism, candid moment"
+    }
+   ]
+  },
+  {
+   "name": "Light",
+   "slot": "light",
+   "modes": [],
+   "presets": [
+    {
+     "id": "ligh-softdaylight",
+     "label": "Soft daylight",
+     "text": "soft natural daylight with gentle fill"
+    },
+    {
+     "id": "ligh-goldenhour",
+     "label": "Golden hour",
+     "text": "warm golden-hour sunlight low on the horizon, long soft shadows"
+    },
+    {
+     "id": "ligh-bluehour",
+     "label": "Blue hour",
+     "text": "cool blue-hour twilight with the first city lights"
+    },
+    {
+     "id": "ligh-middaysun",
+     "label": "Midday sun",
+     "text": "hard midday sun with crisp shadows"
+    },
+    {
+     "id": "ligh-overcast",
+     "label": "Overcast",
+     "text": "even overcast light, no harsh shadows"
+    },
+    {
+     "id": "ligh-windowlight",
+     "label": "Window light",
+     "text": "soft window light from the left, gentle falloff"
+    },
+    {
+     "id": "ligh-studiosoftbox",
+     "label": "Studio softbox",
+     "text": "professional studio softbox key light with fill and rim light"
+    },
+    {
+     "id": "ligh-rembrandt",
+     "label": "Rembrandt",
+     "text": "Rembrandt lighting, a small triangle of light on the shadow cheek"
+    },
+    {
+     "id": "ligh-backlightrim",
+     "label": "Backlight rim",
+     "text": "strong backlight creating a glowing rim around the subject"
+    },
+    {
+     "id": "ligh-neonnight",
+     "label": "Neon night",
+     "text": "neon signs at night, magenta and cyan reflections"
+    },
+    {
+     "id": "ligh-candlelight",
+     "label": "Candlelight",
+     "text": "warm flickering candlelight in a dark room"
+    },
+    {
+     "id": "ligh-firelight",
+     "label": "Firelight",
+     "text": "orange light from a nearby fire"
+    },
+    {
+     "id": "ligh-moonlight",
+     "label": "Moonlight",
+     "text": "cool silver moonlight, deep night shadows"
+    },
+    {
+     "id": "ligh-streetlamps",
+     "label": "Street lamps",
+     "text": "sodium street lamps at night, warm pools of light"
+    },
+    {
+     "id": "ligh-flashatnight",
+     "label": "Flash at night",
+     "text": "direct on-camera flash at night, dark background"
+    },
+    {
+     "id": "ligh-volumetricrays",
+     "label": "Volumetric rays",
+     "text": "sunbeams through haze, visible volumetric light rays"
+    },
+    {
+     "id": "ligh-stagespotlight",
+     "label": "Stage spotlight",
+     "text": "a single theatrical spotlight from above"
+    },
+    {
+     "id": "ligh-lowkeydramatic",
+     "label": "Low-key dramatic",
+     "text": "low-key lighting, mostly shadow with one strong light"
+    },
+    {
+     "id": "ligh-highkeybright",
+     "label": "High-key bright",
+     "text": "bright high-key lighting, almost no shadows"
+    }
+   ]
+  },
+  {
+   "name": "Color & film",
+   "slot": "color",
+   "modes": [],
+   "presets": [
+    {
+     "id": "colo-truetolife",
+     "label": "True-to-life",
+     "text": "true-to-life colors"
+    },
+    {
+     "id": "colo-kodakportra",
+     "label": "Kodak Portra",
+     "text": "Kodak Portra 400 film colors, warm skin tones, fine grain"
+    },
+    {
+     "id": "colo-fujivelvia",
+     "label": "Fuji Velvia",
+     "text": "Fuji Velvia slide film, rich saturated colors"
+    },
+    {
+     "id": "colo-cinestill800t",
+     "label": "Cinestill 800T",
+     "text": "Cinestill 800T film, tungsten tones and halation around lights"
+    },
+    {
+     "id": "colo-blackwhite",
+     "label": "Black & white",
+     "text": "classic black-and-white photograph, rich tonal range"
+    },
+    {
+     "id": "colo-bwhighcontrast",
+     "label": "B&W high contrast",
+     "text": "high-contrast black-and-white, deep blacks and bright whites"
+    },
+    {
+     "id": "colo-tealorange",
+     "label": "Teal & orange",
+     "text": "cinematic teal-and-orange color grade"
+    },
+    {
+     "id": "colo-mutedpastel",
+     "label": "Muted pastel",
+     "text": "muted pastel palette, soft and airy"
+    },
+    {
+     "id": "colo-warmvintage70s",
+     "label": "Warm vintage 70s",
+     "text": "warm 1970s film look, faded colors, light grain"
+    },
+    {
+     "id": "colo-cooldesaturated",
+     "label": "Cool desaturated",
+     "text": "cool desaturated palette, quiet mood"
+    },
+    {
+     "id": "colo-vivid",
+     "label": "Vivid",
+     "text": "vivid saturated colors, punchy contrast"
+    },
+    {
+     "id": "colo-moodydark",
+     "label": "Moody dark",
+     "text": "dark moody grade with deep shadows and muted highlights"
+    },
+    {
+     "id": "colo-mattefilm",
+     "label": "Matte film",
+     "text": "matte film look with lifted blacks"
+    },
+    {
+     "id": "colo-sepia",
+     "label": "Sepia",
+     "text": "sepia-toned photograph"
+    }
+   ]
+  },
+  {
+   "name": "Focus",
+   "slot": "focus",
+   "modes": [],
+   "presets": [
+    {
+     "id": "focu-allinfocus",
+     "label": "All in focus",
+     "text": "deep focus with subject and background equally sharp, no bokeh"
+    },
+    {
+     "id": "focu-shallowdepth",
+     "label": "Shallow depth",
+     "text": "shallow depth of field, subject sharp, background softly blurred"
+    },
+    {
+     "id": "focu-creamybokeh",
+     "label": "Creamy bokeh",
+     "text": "very shallow depth of field with creamy round bokeh"
+    },
+    {
+     "id": "focu-tiltshift",
+     "label": "Tilt-shift",
+     "text": "tilt-shift effect, a thin plane of focus"
+    },
+    {
+     "id": "focu-motionblurbackground",
+     "label": "Motion blur background",
+     "text": "subject sharp with a motion-blurred background (panning)"
+    }
+   ]
+  },
+  {
+   "name": "Time & weather",
+   "slot": "extra",
+   "modes": [],
+   "presets": [
+    {
+     "id": "time-sunrise",
+     "label": "Sunrise",
+     "text": "TIME: sunrise, first light."
+    },
+    {
+     "id": "time-sunset",
+     "label": "Sunset",
+     "text": "TIME: sunset, warm sky."
+    },
+    {
+     "id": "time-night",
+     "label": "Night",
+     "text": "TIME: night."
+    },
+    {
+     "id": "time-lightrain",
+     "label": "Light rain",
+     "text": "WEATHER: light rain, wet glossy surfaces and reflections."
+    },
+    {
+     "id": "time-heavystorm",
+     "label": "Heavy storm",
+     "text": "WEATHER: heavy storm, wind and dramatic clouds."
+    },
+    {
+     "id": "time-snowfall",
+     "label": "Snowfall",
+     "text": "WEATHER: falling snow, snow on the ground."
+    },
+    {
+     "id": "time-fog",
+     "label": "Fog",
+     "text": "WEATHER: dense fog, distant things fading."
+    },
+    {
+     "id": "time-hotsummer",
+     "label": "Hot summer",
+     "text": "WEATHER: hot summer day, bright sky, heat haze."
+    },
+    {
+     "id": "time-autumn",
+     "label": "Autumn",
+     "text": "SEASON: autumn, orange leaves."
+    },
+    {
+     "id": "time-springbloom",
+     "label": "Spring bloom",
+     "text": "SEASON: spring, trees in blossom."
+    },
+    {
+     "id": "time-winter",
+     "label": "Winter",
+     "text": "SEASON: cold winter, breath visible in the air."
+    }
+   ]
+  },
+  {
+   "name": "Setting",
+   "slot": "extra",
+   "modes": [],
+   "presets": [
+    {
+     "id": "sett-naples1950s",
+     "label": "Naples 1950s",
+     "text": "SETTING: a narrow street in Naples in the 1950s, laundry hanging between buildings."
+    },
+    {
+     "id": "sett-sicilianvillage",
+     "label": "Sicilian village",
+     "text": "SETTING: a sunlit Sicilian village square with stone houses."
+    },
+    {
+     "id": "sett-tokyoatnight",
+     "label": "Tokyo at night",
+     "text": "SETTING: a busy Tokyo street at night with signs and crowds."
+    },
+    {
+     "id": "sett-newyorkstreet",
+     "label": "New York street",
+     "text": "SETTING: a New York street with yellow cabs and brownstones."
+    },
+    {
+     "id": "sett-pariscafé",
+     "label": "Paris café",
+     "text": "SETTING: a Parisian café terrace."
+    },
+    {
+     "id": "sett-blackforest",
+     "label": "Black Forest",
+     "text": "SETTING: a dense Black Forest path with tall fir trees."
+    },
+    {
+     "id": "sett-beach",
+     "label": "Beach",
+     "text": "SETTING: a wide sandy beach with gentle waves."
+    },
+    {
+     "id": "sett-mountains",
+     "label": "Mountains",
+     "text": "SETTING: high mountains with snowy peaks."
+    },
+    {
+     "id": "sett-desert",
+     "label": "Desert",
+     "text": "SETTING: an open desert with dunes."
+    },
+    {
+     "id": "sett-medievalcastle",
+     "label": "Medieval castle",
+     "text": "SETTING: the stone courtyard of a medieval castle."
+    },
+    {
+     "id": "sett-gothiccathedral",
+     "label": "Gothic cathedral",
+     "text": "SETTING: inside a gothic cathedral with stained glass."
+    },
+    {
+     "id": "sett-abandonedfactory",
+     "label": "Abandoned factory",
+     "text": "SETTING: an abandoned industrial factory with rust and broken windows."
+    },
+    {
+     "id": "sett-cyberpunkcity",
+     "label": "Cyberpunk city",
+     "text": "SETTING: a futuristic rainy city with holographic signs, still photographed as real."
+    },
+    {
+     "id": "sett-photostudio",
+     "label": "Photo studio",
+     "text": "SETTING: a professional photo studio with a seamless grey backdrop."
+    },
+    {
+     "id": "sett-whitestudio",
+     "label": "White studio",
+     "text": "SETTING: a clean white seamless studio backdrop."
+    },
+    {
+     "id": "sett-cozylivingroom",
+     "label": "Cozy living room",
+     "text": "SETTING: a cozy living room with warm lamps."
+    },
+    {
+     "id": "sett-oldlibrary",
+     "label": "Old library",
+     "text": "SETTING: an old library with tall wooden shelves."
+    },
+    {
+     "id": "sett-diner",
+     "label": "Diner",
+     "text": "SETTING: an American diner with chrome and red booths."
+    },
+    {
+     "id": "sett-subway",
+     "label": "Subway",
+     "text": "SETTING: a subway platform with a train arriving."
+    },
+    {
+     "id": "sett-rooftop",
+     "label": "Rooftop",
+     "text": "SETTING: a city rooftop with the skyline behind."
+    },
+    {
+     "id": "sett-forestlake",
+     "label": "Forest lake",
+     "text": "SETTING: the shore of a calm forest lake."
+    },
+    {
+     "id": "sett-vineyard",
+     "label": "Vineyard",
+     "text": "SETTING: rows of a vineyard on rolling hills."
+    }
+   ]
+  },
+  {
+   "name": "Outfit & era",
+   "slot": "extra",
+   "modes": [],
+   "presets": [
+    {
+     "id": "outf-elegantevening",
+     "label": "Elegant evening",
+     "text": "OUTFIT: elegant evening wear."
+    },
+    {
+     "id": "outf-businesssuit",
+     "label": "Business suit",
+     "text": "OUTFIT: a tailored business suit."
+    },
+    {
+     "id": "outf-streetwear",
+     "label": "Streetwear",
+     "text": "OUTFIT: modern streetwear."
+    },
+    {
+     "id": "outf-leatherdenim",
+     "label": "Leather & denim",
+     "text": "OUTFIT: a leather jacket and denim."
+    },
+    {
+     "id": "outf-military",
+     "label": "Military",
+     "text": "OUTFIT: a realistic military uniform."
+    },
+    {
+     "id": "outf-medieval",
+     "label": "Medieval",
+     "text": "OUTFIT: authentic medieval clothing."
+    },
+    {
+     "id": "outf-roaring20s",
+     "label": "Roaring 20s",
+     "text": "OUTFIT: 1920s fashion."
+    },
+    {
+     "id": "outf-1950s",
+     "label": "1950s",
+     "text": "OUTFIT: 1950s fashion."
+    },
+    {
+     "id": "outf-1980s",
+     "label": "1980s",
+     "text": "OUTFIT: 1980s fashion."
+    },
+    {
+     "id": "outf-sportswear",
+     "label": "Sportswear",
+     "text": "OUTFIT: athletic sportswear."
+    },
+    {
+     "id": "outf-wintercoat",
+     "label": "Winter coat",
+     "text": "OUTFIT: a heavy winter coat and scarf."
+    },
+    {
+     "id": "outf-summercasual",
+     "label": "Summer casual",
+     "text": "OUTFIT: light summer clothes."
+    },
+    {
+     "id": "outf-gothic",
+     "label": "Gothic",
+     "text": "OUTFIT: gothic dark clothing with lace and silver details."
+    },
+    {
+     "id": "outf-workwear",
+     "label": "Workwear",
+     "text": "OUTFIT: rugged workwear."
+    }
+   ]
+  },
+  {
+   "name": "Expression & pose",
+   "slot": "extra",
+   "modes": [],
+   "presets": [
+    {
+     "id": "expr-warmsmile",
+     "label": "Warm smile",
+     "text": "EXPRESSION: a warm, natural smile."
+    },
+    {
+     "id": "expr-serious",
+     "label": "Serious",
+     "text": "EXPRESSION: serious and focused."
+    },
+    {
+     "id": "expr-laughing",
+     "label": "Laughing",
+     "text": "EXPRESSION: laughing naturally."
+    },
+    {
+     "id": "expr-mysterious",
+     "label": "Mysterious",
+     "text": "EXPRESSION: calm and mysterious, direct gaze."
+    },
+    {
+     "id": "expr-lookingaway",
+     "label": "Looking away",
+     "text": "POSE: looking away from the camera, candid."
+    },
+    {
+     "id": "expr-walking",
+     "label": "Walking",
+     "text": "POSE: walking toward the camera mid-stride."
+    },
+    {
+     "id": "expr-sitting",
+     "label": "Sitting",
+     "text": "POSE: sitting relaxed."
+    },
+    {
+     "id": "expr-leaning",
+     "label": "Leaning",
+     "text": "POSE: leaning against a wall."
+    },
+    {
+     "id": "expr-armscrossed",
+     "label": "Arms crossed",
+     "text": "POSE: arms crossed, confident."
+    },
+    {
+     "id": "expr-handsinpockets",
+     "label": "Hands in pockets",
+     "text": "POSE: hands in the pockets, relaxed."
+    },
+    {
+     "id": "expr-dynamicaction",
+     "label": "Dynamic action",
+     "text": "POSE: a dynamic action pose, frozen motion."
+    }
+   ]
+  },
+  {
+   "name": "Edit: change",
+   "slot": "change",
+   "modes": [
+    "img2img"
+   ],
+   "presets": [
+    {
+     "id": "edit-replacebackground",
+     "label": "Replace background",
+     "text": "replace only the background with a fitting real location; keep the subject untouched"
+    },
+    {
+     "id": "edit-daynight",
+     "label": "Day → night",
+     "text": "turn the scene into night, with matching artificial light"
+    },
+    {
+     "id": "edit-nightday",
+     "label": "Night → day",
+     "text": "turn the scene into bright daytime"
+    },
+    {
+     "id": "edit-changeseason",
+     "label": "Change season",
+     "text": "change the season to winter with snow"
+    },
+    {
+     "id": "edit-makeitrain",
+     "label": "Make it rain",
+     "text": "add rain and wet reflections to the scene"
+    },
+    {
+     "id": "edit-changeoutfit",
+     "label": "Change outfit",
+     "text": "change only the clothing to a different, fitting outfit"
+    },
+    {
+     "id": "edit-makeyounger",
+     "label": "Make younger",
+     "text": "make the person about ten years younger, same identity"
+    },
+    {
+     "id": "edit-makeolder",
+     "label": "Make older",
+     "text": "make the person about twenty years older, same identity"
+    },
+    {
+     "id": "edit-addsmile",
+     "label": "Add smile",
+     "text": "change only the expression to a natural smile"
+    },
+    {
+     "id": "edit-removepeople",
+     "label": "Remove people",
+     "text": "remove all other people from the background"
+    },
+    {
+     "id": "edit-removeobjects",
+     "label": "Remove objects",
+     "text": "remove distracting objects and clutter from the background"
+    },
+    {
+     "id": "edit-colorize",
+     "label": "Colorize",
+     "text": "turn the black-and-white image into natural modern color"
+    },
+    {
+     "id": "edit-fixlighting",
+     "label": "Fix lighting",
+     "text": "fix the lighting: balanced exposure, no blown highlights, open shadows"
+    },
+    {
+     "id": "edit-sharpenclean",
+     "label": "Sharpen & clean",
+     "text": "clean noise and blur, recover fine detail like a high-end camera"
+    },
+    {
+     "id": "edit-studioportrait",
+     "label": "Studio portrait",
+     "text": "turn it into a clean studio portrait with a grey backdrop"
+    },
+    {
+     "id": "edit-moviestill",
+     "label": "Movie still",
+     "text": "make it look like a still from a big-budget film"
+    },
+    {
+     "id": "edit-expandscene",
+     "label": "Expand scene",
+     "text": "show more of the surroundings around the subject, extending the scene naturally"
+    }
+   ]
+  }
+ ]
+}
