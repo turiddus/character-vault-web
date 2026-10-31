@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
-title Character Vault 9.0.5 - aggiornamento
+title Character Vault 9.0.6 - aggiornamento
 echo.
 echo  ============================================================
-echo    CHARACTER VAULT 9.0.5 - AGGIORNAMENTO DEL PROGRAMMA
+echo    CHARACTER VAULT 9.0.6 - AGGIORNAMENTO DEL PROGRAMMA
 echo  ============================================================
 echo  Prima: chiudi Character Vault su questo PC.
 echo  Restano intatti: Data, Library, catalogo, accesso Google, chiave Android, Python privato.
