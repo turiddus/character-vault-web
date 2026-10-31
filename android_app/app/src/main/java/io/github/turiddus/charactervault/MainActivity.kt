@@ -35,7 +35,7 @@ import java.io.IOException
 import java.util.concurrent.Executors
 
 /**
- * Character Vault per Android: la stessa interfaccia della web app (galleria sincronizzata con l'archivio su
+ * Goth Vault per Android: la stessa interfaccia della web app (galleria sincronizzata con l'archivio su
  * Google Drive) con le parti native che il browser non offre: accesso Google con l'account del telefono, download
  * nella Galleria, «Condividi» da altre app, fotocamera e ritaglio in medium close-up con rilevamento dei volti.
  */
@@ -91,7 +91,7 @@ class MainActivity : EnglishActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 7.2: animated Character Vault splash, kept until the page has drawn (at most 2.5 s).
+        // 7.2: animated Goth Vault splash, kept until the page has drawn (at most 2.5 s).
         val splash = installSplashScreen()
         val started = SystemClock.uptimeMillis()
         splash.setKeepOnScreenCondition { !pageReady && SystemClock.uptimeMillis() - started < 2500 }
@@ -279,7 +279,7 @@ class MainActivity : EnglishActivity() {
         }
         val all = ArrayList(sharedQueue)
         sharedQueue.clear()
-        // I video (Character Vault 5) vanno caricati così come sono; le foto passano dal ritaglio.
+        // I video (Goth Vault 5) vanno caricati così come sono; le foto passano dal ritaglio.
         val videos = all.filter { (contentResolver.getType(it) ?: "").startsWith("video/") }
         val photos = ArrayList(all.filterNot { it in videos })
         if (videos.isNotEmpty()) uploadVideos(videos)
@@ -287,7 +287,7 @@ class MainActivity : EnglishActivity() {
     }
 
     private fun uploadVideos(videos: List<Uri>) {
-        toast("Uploading ${videos.size} videos to Character Vault…")
+        toast("Uploading ${videos.size} videos to Goth Vault…")
         GoogleAuth.authorize(this, consent, true) { token, error ->
             if (token == null) { toast("Google sign-in failed: $error"); return@authorize }
             io.execute {

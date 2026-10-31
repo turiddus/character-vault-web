@@ -1,13 +1,13 @@
 {
-  "name": "Character Vault",
-  "short_name": "Vault",
-  "description": "Your Character Vault gallery on your phone",
+  "name": "Goth Vault",
+  "short_name": "Goth Vault",
+  "description": "Your Goth Vault on your phone",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0c0a0f",
-  "theme_color": "#0c0a0f",
+  "background_color": "#0a0910",
+  "theme_color": "#0a0910",
   "icons": [
     {
       "src": "icon-192.png",

@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
-title Character Vault - Build Android APK
+title Goth Vault - Build Android APK
 cd /d "%~dp0"
 
 rem
@@ -113,8 +113,8 @@ popd
 if not "!BUILD_ERR!"=="0" goto :build_failed
 set "APK=!APP!\app\build\outputs\apk\release\app-release.apk"
 if not exist "!APK!" goto :apk_missing
-copy /y "!APK!" "!ROOT!\CharacterVault.apk" >nul || goto :copy_failed
-echo [4/5] APK ready: "!ROOT!\CharacterVault.apk"
+copy /y "!APK!" "!ROOT!\GothVault.apk" >nul || goto :copy_failed
+echo [4/5] APK ready: "!ROOT!\GothVault.apk"
 
 echo.
 echo [5/5] Signing SHA-1 fingerprint (configure once in Google Cloud):
@@ -132,12 +132,12 @@ if not defined DEVICE goto :done
 echo.
 choice /c YN /m "Phone connected by USB: install the app now"
 if errorlevel 2 goto :done
-"!ADB!" install -r "!ROOT!\CharacterVault.apk"
+"!ADB!" install -r "!ROOT!\GothVault.apk"
 
 :done
 echo.
 echo  ============================================================
-echo    DONE. Copy CharacterVault.apk to your phone and open it
+echo    DONE. Copy GothVault.apk to your phone and open it
 echo    to install it, or connect the phone by USB with
 echo    USB debugging enabled and run this file again.
 echo  ============================================================

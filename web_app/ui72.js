@@ -59,7 +59,7 @@ function mix(hex, other, t){
 function applyTheme(){
   const root = document.documentElement.style;
   ["--accent", "--accent2", "--accent-soft"].forEach(v => root.removeProperty(v));
-  let accent = "#c4364f";
+  let accent = "#d89ec7";
   if (PREF.colors === "system" && nativeHas("theme")) {
     try {
       const t = JSON.parse(window.CVNative.theme() || "{}");
@@ -67,11 +67,11 @@ function applyTheme(){
         accent = t.a600 || t.a500;
         root.setProperty("--accent", accent);
         root.setProperty("--accent2", t.a300 || mix(accent, "#ffffff", .3));
-        root.setProperty("--accent-soft", mix(t.a900 || accent, "#0c0a0f", .45));
+        root.setProperty("--accent-soft", mix(t.a900 || accent, "#0a0910", .45));
       }
     } catch (e) {}
   }
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#0c0a0f");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#0a0910");
   return accent;
 }
 

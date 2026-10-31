@@ -30,11 +30,11 @@ android {
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "io.github.turiddus.charactervault"
+        applicationId = "io.github.turiddus.gothvault"
         minSdk = 28
         targetSdk = 35
-        versionCode = 910
-        versionName = "9.1.0"
+        versionCode = 100
+        versionName = "1.0.0"
         // Solo processori dei telefoni (ARM): l'APK è molto più leggero senza le librerie x86 degli emulatori.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }

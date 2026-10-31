@@ -1,7 +1,7 @@
 name: Video player installer (Windows)
 on:
   push:
-    branches: [android-app]
+    branches: [goth-app]
     paths: [INSTALLA_PLAYER_VIDEO.bat, RUN_PYTHON.bat, cv_runtime_entry_v2.py, tools/install_video_player.py, tools/qt_dll_doctor.py, .github/workflows/player-video.yml]
   workflow_dispatch:
 jobs:

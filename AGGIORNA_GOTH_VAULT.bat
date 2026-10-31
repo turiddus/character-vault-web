@@ -1,12 +1,12 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
-title Character Vault 9.1.0 - aggiornamento
+title Goth Vault 1.0.0 - aggiornamento
 echo.
 echo  ============================================================
-echo    CHARACTER VAULT 9.1.0 - AGGIORNAMENTO DEL PROGRAMMA
+echo    GOTH VAULT 1.0.0 - AGGIORNAMENTO DEL PROGRAMMA
 echo  ============================================================
-echo  Prima: chiudi Character Vault su questo PC.
+echo  Prima: chiudi Goth Vault su questo PC.
 echo  Restano intatti: Data, Library, catalogo, accesso Google, chiave Android, Python privato.
 echo  Backup automatico di codice e catalogo in Data\backups\updates.
 echo.
@@ -17,11 +17,11 @@ if not exist "%~dp0install_update.py" (
 )
 set "TARGET=C:\AI\CharacterVault"
 set "INPUT="
-set /p "INPUT=Cartella di Character Vault gia installato [C:\AI\CharacterVault]: "
+set /p "INPUT=Cartella di Goth Vault gia installato [C:\AI\CharacterVault]: "
 if defined INPUT set "TARGET=%INPUT%"
 set "TARGET=%TARGET:"=%"
 if not exist "%TARGET%\main.py" (
-  echo [ERRORE] In "%TARGET%" non trovo Character Vault ^(main.py^).
+  echo [ERRORE] In "%TARGET%" non trovo Goth Vault ^(main.py^).
   pause
   exit /b 2
 )
@@ -58,7 +58,7 @@ if errorlevel 1 (
   exit /b 1
 )
 echo.
-echo  FATTO. Avvia Character Vault come sempre ^(START_NOTEBOOK_8GB.bat o START_CHARACTER_VAULT.bat^).
+echo  FATTO. Avvia Goth Vault come sempre ^(START_NOTEBOOK_8GB.bat o START_GOTH_VAULT.bat^).
 echo  Poi ricompila l'app Android con BUILD_ANDROID_APK.bat nella cartella installata ^(vedi LEGGIMI.md^).
 echo.
 pause

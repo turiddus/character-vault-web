@@ -341,7 +341,7 @@ object GenesisPhone {
             "Quality: ${job.getString("quality")}, Version: Genesis phone ${BuildConfigCompatVersion.name(ctx)}" +
             (if (job.optString("dna").isNotEmpty()) ", DNA: ${job.optString("dna")}" else "") +
             (if (job.optString("entity").isNotEmpty()) ", Character: ${job.optString("entity")}" else "")
-        val software = if (refs.isEmpty()) "Character Vault Genesis (phone)" else "Character Vault Studio (phone)"
+        val software = if (refs.isEmpty()) "Goth Vault Genesis (phone)" else "Goth Vault Studio (phone)"
         val png = withText(raw, listOf("parameters" to "$prompt\n$settings", "Software" to software))
         File(dir(ctx), name).writeBytes(png)
         update(ctx, id) { e ->

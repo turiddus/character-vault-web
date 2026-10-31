@@ -49,7 +49,7 @@ class GenesisPhoneTest {
 
     @Test fun textChunksAfterHeader() {
         val prompt = "UNIVERSAL RANDOM CHARACTER GENESIS\nCHARACTER SPECIFICATION:\nGENRE: test — dash"
-        val out = GenesisPhone.withText(tinyPng(), listOf("parameters" to "$prompt\nSteps: 1, Size: 1024x1536", "Software" to "Character Vault Genesis (phone)"))
+        val out = GenesisPhone.withText(tinyPng(), listOf("parameters" to "$prompt\nSteps: 1, Size: 1024x1536", "Software" to "Goth Vault Genesis (phone)"))
         val list = chunks(out)
         assertEquals(listOf("IHDR", "tEXt", "tEXt", "IDAT", "IEND"), list.map { it.first })
         val text = String(list[1].second, Charsets.ISO_8859_1)

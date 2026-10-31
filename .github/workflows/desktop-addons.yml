@@ -1,7 +1,7 @@
 name: Desktop add-ons (Windows)
 on:
   push:
-    branches: [android-app]
+    branches: [goth-app]
     paths: [desktop_ci/**, .github/workflows/desktop-addons.yml]
   workflow_dispatch:
 jobs:

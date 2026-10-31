@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0c0a0f">
-<title>Character Vault</title>
+<meta name="theme-color" content="#0a0910">
+<title>Goth Vault</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -20,9 +20,9 @@ if (!window.CVNative) {
 </script>
 <style>
 :root{
-  --bg0:#0c0a0f;--bg1:#121016;--bg2:#18141d;--bg3:#201b26;--bg4:#29222f;
-  --border:#2a2330;--border2:#3b3243;--text:#efe9f2;--text2:#b8afc1;--text3:#7f768a;
-  --accent:#c4364f;--accent2:#d84b65;--accent-soft:#3a1b24;--gold:#d4ac62;--ok:#4cc38a;--warn:#e5a84a;--danger:#ec5b5b;--ai:#a48bff;
+  --bg0:#0a0910;--bg1:#110e17;--bg2:#15121d;--bg3:#1d1926;--bg4:#2a2233;
+  --border:#2c2535;--border2:#383042;--text:#f5f0f8;--text2:#c9bfd3;--text3:#8c8398;
+  --accent:#d89ec7;--accent2:#e6b3d6;--accent-soft:#33202f;--gold:#e4caa7;--ok:#8ee1d1;--warn:#e8b86a;--danger:#fa91a2;--ai:#a487ff;
   --r:14px;--safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -30,7 +30,7 @@ html,body{margin:0;background:var(--bg0);color:var(--text);font:15px/1.45 Inter,
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 .hidden{display:none!important}
-header.top{position:sticky;top:0;z-index:20;background:linear-gradient(var(--bg0) 75%,rgba(12,10,15,.85));padding:calc(10px + var(--safe-t)) 14px 8px;backdrop-filter:blur(8px)}
+header.top{position:sticky;top:0;z-index:20;background:linear-gradient(var(--bg0) 75%,rgba(10,9,16,.85));padding:calc(10px + var(--safe-t)) 14px 8px;backdrop-filter:blur(8px)}
 .brand{display:flex;align-items:center;gap:10px}
 .brand img{width:30px;height:30px;border-radius:8px}
 .brand h1{font:600 15px/1 Cinzel,serif;letter-spacing:.08em;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -172,7 +172,7 @@ label.btn{cursor:pointer}
 const SCOPE = "https://www.googleapis.com/auth/drive";
 const API = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3";
-const DEFAULT_ROOT = "";
+const DEFAULT_ROOT = "https://drive.google.com/drive/folders/1NRsrT72AVs0Dr1kEBrhwNAbF-ugr1713";
 const INDEX_NAME = "indice_web.json.gz";
 const PAGE = 120;
 const GROUPS = {donna: "Women", uomo: "Men", altro: "Creatures and others"};
@@ -210,7 +210,7 @@ let logoSeq = 0;
 function logoSvg(size, cls=""){
   const n = ++logoSeq, g = "cvlg" + n, bg = "cvlb" + n, gl = "cvlw" + n;
   return `<svg class="cv-logo ${cls}" width="${size}" height="${size}" viewBox="0 0 512 512" aria-hidden="true">
-    <defs><linearGradient id="${g}" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#ead08f"/><stop offset=".55" stop-color="#d4ac62"/><stop offset="1" style="stop-color:var(--accent)"/></linearGradient>
+    <defs><linearGradient id="${g}" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#f0dcc0"/><stop offset=".55" stop-color="#d89ec7"/><stop offset="1" style="stop-color:var(--accent)"/></linearGradient>
       <radialGradient id="${bg}" cx=".5" cy=".3" r=".8"><stop offset="0" stop-color="#2d1a26"/><stop offset=".7" stop-color="#140f17"/><stop offset="1" stop-color="#0a080c"/></radialGradient>
       <radialGradient id="${gl}" cx=".5" cy=".58" r=".35"><stop offset="0" style="stop-color:var(--accent)" stop-opacity=".5"/><stop offset="1" style="stop-color:var(--accent)" stop-opacity="0"/></radialGradient></defs>
     <rect x="12" y="12" width="488" height="488" rx="112" fill="url(#${bg})"/>
@@ -221,7 +221,7 @@ function logoSvg(size, cls=""){
     <path class="lg-draw lg-d3" pathLength="1" d="M112 414 H400" fill="none" stroke="url(#${g})" stroke-width="20" stroke-linecap="round"/>
     <g class="lg-eye"><path d="M190 300 C220 258 292 258 322 300 C292 342 220 342 190 300 Z" fill="#0d0a10" stroke="url(#${g})" stroke-width="13" stroke-linejoin="round"/>
       <circle cx="256" cy="292" r="17" fill="url(#${g})"/><path d="M248 298 L242 326 H270 L264 298 Z" fill="url(#${g})"/></g>
-    <circle class="lg-star" cx="256" cy="98" r="7" fill="#ead08f"/></svg>`;
+    <circle class="lg-star" cx="256" cy="98" r="7" fill="#f0dcc0"/></svg>`;
 }
 
 /* ============================================================= accesso Google */
@@ -318,7 +318,7 @@ async function resolveFolders(){
   if (S.folders) return S.folders;
   const root = rootId();
   const web = (await children(root, "web", true))[0];
-  if (!web) throw new Error("The archive has no web index yet. Open Character Vault on the desktop and wait for its first publication.");
+  if (!web) throw new Error("The archive has no web index yet. Open Goth Vault on the desktop and wait for its first publication.");
   const mod = (await children(web.id, "modifiche", true))[0];
   S.folders = {root, web: web.id, modifiche: mod ? mod.id : ""};
   return S.folders;
@@ -432,7 +432,7 @@ function openPending(id){
     <div class="viewer"><img id="pimg" alt=""><div class="spin" id="pspin">loading…</div></div>
     <div class="info"><h3><span>${esc(f.name)}</span></h3>
       <div class="meta">Uploaded on ${new Date(f.createdTime).toLocaleString("en-US")}${f.size ? ` · ${f.size >= 1e6 ? (f.size / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(f.size / 1e3)) + " KB"}` : ""}</div>
-      <div class="banner"><span>⏳ Awaiting desktop processing: when Character Vault opens on a desktop, the asset is imported, recognized and described by Codex, then appears here as a complete record.</span></div></div>`;
+      <div class="banner"><span>⏳ Awaiting desktop processing: when Goth Vault opens on a desktop, the asset is imported, recognized and described by Codex, then appears here as a complete record.</span></div></div>`;
   document.body.appendChild(d); document.body.style.overflow = "hidden";
   history.pushState({detail: id}, "");
   $("#pback").onclick = () => history.back();
@@ -770,12 +770,12 @@ function tabsHtml(){
   const b = (id, label, icon, on) => `<button data-tab="${id}" class="${on ? "on" : ""}">${ico(icon)}<span>${label}</span></button>`;
   return `<nav class="tabs">${b("gallery", "Gallery", "grid", v === "gallery")}${b("people", "Characters", "users", v === "people" || v === "person")}
     <button data-tab="add" class="add"><span class="ic">${ico("plus")}</span><span>Add</span></button>
-    ${b("studio", "Studio", "layers", v === "studio")}${b("stats", "Stats", "search", v === "stats")}${b("genesis", "Genesis", "image", v === "genesis")}${b("settings", "Settings", "cog", v === "settings")}</nav>`;
+    ${b("studio", "Studio", "layers", v === "studio")}${b("stats", "Stats", "search", v === "stats")}${b("atlas", "Atlas", "image", v === "atlas" || v === "genesis")}${b("settings", "Settings", "cog", v === "settings")}</nav>`;
 }
 function render(){
   const app = $("#app");
   if (!clientId() || !localStorage.getItem("cv_logged")) { app.innerHTML = loginHtml(); bindLogin(); return; }
-  if (!S.index) { app.innerHTML = `<div class="login">${logoSvg(96, "anim")}<h1>Character Vault</h1><p id="msg">Loading archive…</p></div>`; return; }
+  if (!S.index) { app.innerHTML = `<div class="login">${logoSvg(96, "anim")}<h1>Goth Vault</h1><p id="msg">Loading archive…</p></div>`; return; }
   const route = parseRoute();
   S.view = route.view;
   if (route.view === "stats") return renderUltimateStats();
@@ -786,6 +786,7 @@ function render(){
   if (route.view === "thing") return renderThing(route.arg);
   if (route.view === "add") return renderAdd();
   if (route.view === "settings") return renderSettings();
+  if (route.view === "atlas") return window.renderAtlas ? window.renderAtlas() : go("#/genesis");
   if (route.view === "genesis") return renderGenesis();
   if (route.view === "live-log") return renderLiveLog();
   renderGallery();
@@ -812,8 +813,8 @@ function bindCommon(){
 }
 let currentBase = [], currentTitle = "";
 function renderGallery(){
-  currentBase = S.index.images; currentTitle = "Character Vault";
-  mountPage(`${pendingBanner()}${pendingHtml()}<div class="status" id="status"></div><div class="grid" id="grid"></div><div class="sentinel" id="sentinel"></div>`, "Character Vault");
+  currentBase = S.index.images; currentTitle = "Goth Vault";
+  mountPage(`${pendingBanner()}${pendingHtml()}<div class="status" id="status"></div><div class="grid" id="grid"></div><div class="sentinel" id="sentinel"></div>`, "Goth Vault");
   bindPending();
   renderListOnly();
 }
@@ -1356,11 +1357,11 @@ function renderAdd(){
   const inbox = S.index.inbox;
   mountPage(`<div class="section-title"><h2>Add images</h2></div>
     <div class="panel"><h4>From your phone to the gallery</h4>
-      <div class="muted">Photos appear immediately under Awaiting desktop processing. When Character Vault opens on a desktop, they are imported, recognized and described by Codex and become complete records.</div>
+      <div class="muted">Photos appear immediately under Awaiting desktop processing. When Goth Vault opens on a desktop, they are imported, recognized and described by Codex and become complete records.</div>
       ${inbox ? `<div class="row" style="margin-top:14px"><label class="btn primary">${ico("image")} Choose from gallery<input id="pick" type="file" accept="image/*,video/*" multiple hidden></label>
         <label class="btn">${ico("camera")} Take photo<input id="shot" type="file" accept="image/*" capture="environment" hidden></label></div>
         ${NATIVE ? `<div class="row"><button class="btn wide" id="ncrop">${ico("edit")} Upload with a cover crop</button></div>
-        <div class="muted">The full original is always uploaded. The frame you choose (face detection proposes a medium close-up) becomes only the gallery cover, exactly like a crop chosen on the desktop. You can also use Share › Character Vault from other apps.</div>` : ""}`
+        <div class="muted">The full original is always uploaded. The frame you choose (face detection proposes a medium close-up) becomes only the gallery cover, exactly like a crop chosen on the desktop. You can also use Share › Goth Vault from other apps.</div>` : ""}`
         : `<div class="banner" style="margin-top:12px"><span>Set the source folder in Import › Google Drive on the desktop, then wait for the next publication.</span></div>`}
     </div><div id="uploads"></div>`, "Add");
   const handle = e => uploadFiles([...e.target.files], inbox);
@@ -1440,7 +1441,7 @@ function renderSettings(){
       const al = h.alerts || [];
       return `<div class="panel"><h4>Archive health</h4><div class="${al.length ? "lb-warn" : "muted"}">${al.length ? "⚠ " + al.map(esc).join(" · ") : "✓ All good"}</div>
         <div class="muted">${(h.lines || []).map(esc).join("<br>")}<br>Checked ${esc(String(h.checked).replace("T", " ").slice(0, 16))} UTC on the PC</div></div>`; })()}
-    <div class="panel"><h4>Android synchronization · 9.1.0</h4>
+    <div class="panel"><h4>Android synchronization · Goth Vault 1.0.0</h4>
       <div class="muted">Checks for new gallery content and portrait-crop bundles every 40 seconds while the Android app is open. Incoming uploads go to the folder configured in the published Drive index.</div>
       <div class="muted" style="margin-top:8px">Gallery: ${S.index.images.length} records · cropped previews: ${S.index.images.filter(x => Array.isArray(x.k) && x.k.length === 3).length} · pending crops: ${Number(S.index.missing_thumbs || 0)}</div></div>
     <div class="panel"><h4>Desktop General Log</h4><div class="muted">Read-only activity from your home PC, updated through your private Drive archive about every 30 seconds while the desktop is running. Sensitive details are hidden.</div>
@@ -1461,7 +1462,7 @@ function renderSettings(){
 
 /* ----------------------------------------------------------- primo accesso */
 function loginHtml(){
-  return `<div class="login">${logoSvg(96, "anim")}<h1>Character Vault</h1><p>Your gallery, on your phone.</p>
+  return `<div class="login">${logoSvg(96, "anim")}<h1>Goth Vault</h1><p>Your gallery, on your phone.</p>
     ${NATIVE ? "" : `<label>OAuth client ID (Web application)</label><input class="txt" id="lcid" placeholder="123…apps.googleusercontent.com" value="${esc(clientId())}">`}
     <label>Drive archive folder</label><input class="txt" id="lroot" value="${esc(localStorage.getItem("cv_root") || DEFAULT_ROOT)}">
     <button class="btn primary wide" id="lgo" style="margin-top:20px">Sign in with Google</button>
@@ -1543,5 +1544,7 @@ window.addEventListener("load", start);
 <script src="lab904.js"></script>
 <script src="genesis_phone83.js"></script>
 <script src="studio90.js"></script>
+<script src="goth_atlas.js"></script>
+<script src="gothatlas_phone.js"></script>
 </body>
 </html>

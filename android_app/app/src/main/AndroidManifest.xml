@@ -23,7 +23,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- «Condividi» da Galleria, browser, WhatsApp…: le foto vanno nella galleria Character Vault -->
+            <!-- «Condividi» da Galleria, browser, WhatsApp…: le foto vanno nella galleria Goth Vault -->
             <intent-filter android:label="@string/share_label">
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />

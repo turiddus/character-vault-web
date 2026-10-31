@@ -7,7 +7,7 @@
         <item name="android:windowLightStatusBar">false</item>
     </style>
 
-    <!-- 7.2: splash screen with the Character Vault mark (static before Android 12). -->
+    <!-- 7.2: splash screen with the Goth Vault mark (static before Android 12). -->
     <style name="Theme.CharacterVault.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/bg0</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
