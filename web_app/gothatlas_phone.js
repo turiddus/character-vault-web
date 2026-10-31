@@ -56,12 +56,15 @@ function statsHtml(){
     <div class="gv-kpis"><div><b>${(g.total || 0) + results.length}</b><small>Goth Atlas images</small></div><div><b>$${Number(g.cost || 0).toFixed(2)}</b><small>spent (PC ledger)</small></div>
       <div><b>${(goth().pool || []).length}</b><small>Codex scenes ready</small></div></div>
     <div class="gv-rings">${ring("subgenres", used("subgenre"), st.subgenres)}${ring("scene categories", used("category"), st.categories)}${ring("countries", used("country"), st.countries)}</div>
+    <p class="muted">Database: ${st.scenes} scenes · ${st.women_garments} women's and ${st.men_garments} men's garments · ${st.couple_actions} couple moments · ${st.cities} cities${g.db && g.db.learned ? ` (${g.db.learned} learned from Codex)` : ""}</p>
+    <h5>Who</h5>${bars((agg.subject || []).map(([k, n]) => [G.SUBJECT_LABELS[k] || k, n]), 4)}
     <h5>Images per day</h5><div class="gv-tl">${tl.map(n => `<i style="--h:${(100 * n / tmax).toFixed(0)}%"></i>`).join("")}</div>
     <h5>Top subgenres</h5>${bars(agg.subgenre || [], 10)}
     <h5>Continents</h5>${bars(agg.continent || [], 8)}
     <h5>Scene categories</h5>${bars(agg.category || [], 8)}
     <h5>Age bands</h5>${bars(AGES.map((a, i) => [a, ages[i]]), 6)}
-    <h5>Source</h5>${bars(agg.source || [], 4)}
+    <h5>Source</h5>${bars((agg.source || []).map(([k, n]) => [{codex: "Codex", database: "database", fallback: "database (Codex fallback)"}[k] || k, n]), 4)}
+    <h5>Created on</h5>${bars((agg.device || []).map(([k, n]) => [k === "pc" ? "PC" : k, n]), 2)}
     <p class="muted">Updated by the PC with every sync (PC and phone images).</p></div>`;
 }
 function render(){
@@ -71,7 +74,7 @@ function render(){
   const sel = (id, items, cur, any) => `<select id="${id}"><option value="">${any}</option>${items.map(([v, t]) => `<option value="${esc(v)}" ${String(v) === String(cur ?? "") ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>`;
   const nat = canCreate() ? (() => { try { return JSON.parse(window.CVNative.genesisPhoneState()); } catch (e) { return null; } })() : null;
   const last = results[results.length - 1];
-  mountPage(`<div class="gv-hero"><h2>Goth Atlas</h2><p class="muted">${st.subgenres} subgenres · ${st.scenes} scenes · ${st.cities} cities · adult women 18–70 · amateur phone realism</p>
+  mountPage(`<div class="gv-hero"><h2>Goth Atlas</h2><p class="muted">${st.subgenres} subgenres · ${st.scenes} scenes · ${st.cities} cities · women, men and couples 18–70 · amateur phone realism</p>
     ${canCreate() ? `<button class="btn primary gv-go" id="gv-go" ${!nat?.has_key || run ? "disabled" : ""}>✦ CREATE RANDOM</button>
       <button class="btn" id="gv-stop" style="display:none">Stop after this one</button>
       <div class="muted" id="gv-state">${!nat?.has_key ? "Save your OpenAI key in Genesis › Create on this phone first." : run ? "Running…" : ""}</div>`
@@ -81,6 +84,7 @@ function render(){
     <div class="panel"><h4>Settings</h4>
       <label class="muted">Images per press</label>${sel("gv-n", Array.from({length: 10}, (_, i) => [i + 1, String(i + 1)]), ld("gv_count", 4), "4")}
       <label class="muted">Source</label><select id="gv-src">${[["alternate", "Alternate · database / Codex"], ["database", "Database only"], ["codex", "Codex scenes only"]].map(([v, t]) => `<option value="${v}" ${ld("gv_source", "alternate") === v ? "selected" : ""}>${t}</option>`).join("")}</select>
+      <label class="muted">Who</label>${sel("gv-who", G.SUBJECTS.map(k => [k, G.SUBJECT_LABELS[k]]), f.subject, "Mix (women, men, couples)")}
       <label class="muted">Subgenre</label>${sel("gv-sub", G.subgenres().slice().sort().map(x => [x, x]), f.subgenre, "Any subgenre")}
       <label class="muted">Scene</label>${sel("gv-cat", G.categories().slice().sort().map(x => [x, x]), f.category, "Any scene category")}
       <label class="muted">Continent</label>${sel("gv-cont", G.continents().slice().sort().map(x => [x, x]), f.continent, "Anywhere")}
@@ -93,11 +97,11 @@ function render(){
   const saveAll = () => {
     sv("gv_count", Number($("#gv-n").value || 4)); sv("gv_source", $("#gv-src").value); sv("gv_model", $("#gv-m").value);
     sv("gv_quality", $("#gv-q").value); sv("gv_size", $("#gv-z").value);
-    sv("gv_filters", {subgenre: $("#gv-sub").value, category: $("#gv-cat").value, continent: $("#gv-cont").value, age_band: $("#gv-age").value});
+    sv("gv_filters", {subject: $("#gv-who").value, subgenre: $("#gv-sub").value, category: $("#gv-cat").value, continent: $("#gv-cont").value, age_band: $("#gv-age").value});
     const c = Number(nat?.prices?.[$("#gv-m").value]?.[$("#gv-z").value]?.[$("#gv-q").value]);
     $("#gv-est").textContent = Number.isFinite(c) ? `≈ $${(c * Number($("#gv-n").value || 4)).toFixed(3)} per press` : "";
   };
-  ["#gv-n", "#gv-src", "#gv-sub", "#gv-cat", "#gv-cont", "#gv-age", "#gv-m", "#gv-q", "#gv-z"].forEach(s => { $(s).onchange = saveAll; });
+  ["#gv-n", "#gv-src", "#gv-who", "#gv-sub", "#gv-cat", "#gv-cont", "#gv-age", "#gv-m", "#gv-q", "#gv-z"].forEach(s => { $(s).onchange = saveAll; });
   saveAll();
   if (!$("#gv-go")) return;
   $("#gv-stop").onclick = () => { if (run) run.stop = true; $("#gv-stop").disabled = true; };
@@ -116,8 +120,8 @@ async function go_(){
     let prompt, caption, fields;
     const stocked = srcs[i] === "codex" ? stockScene() : null;
     if (srcs[i] === "codex" && !stocked) fallback++;
-    if (stocked) { prompt = stocked.prompt; fields = stocked.f || {}; caption = `${fields.subgenre || "Codex scene"} · ${fields.city || ""} · Codex`; }
-    else { fields = G.pick(filters, recent()); prompt = G.compose(fields); caption = `${fields.subgenre} · ${fields.city}, ${fields.country} · age ${fields.age} · database`; }
+    if (stocked) { prompt = stocked.prompt; fields = stocked.f || {}; caption = `${G.SUBJECT_LABELS[fields.subject] || ""} · ${fields.subgenre || "Codex scene"} · ${fields.city || ""} · Codex`; }
+    else { fields = G.pick(filters, recent(), goth().mix); prompt = G.compose(fields); caption = `${G.SUBJECT_LABELS[fields.subject] || ""} · ${fields.subgenre} · ${fields.city}, ${fields.country} · age ${fields.age} · database`; }
     for (const k of ["subgenre", "category", "city"]) if (fields[k]) session[k].push(fields[k]);
     state(`Image ${i + 1}/${n}… (20 s – 3 min, keep the app open)`);
     const result = new Promise(r => { wait = r; });

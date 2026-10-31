@@ -18,9 +18,9 @@ import tempfile
 from datetime import datetime
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "1.0.2"
+VERSION = "1.1.0"
 MANIFEST = "SOURCE_MANIFEST_SHA256.json"
-SUPPORTED = {"1.0.0", "1.0.1", VERSION}   # Goth Vault versions only: a Character Vault folder (9.x) is refused
+SUPPORTED = {"1.0.0", "1.0.1", "1.0.2", VERSION}   # Goth Vault versions only: a Character Vault folder (9.x) is refused
 PROTECTED = {"data", "library", "libreria", "downloads", "genesisinbox", "_runtime", "_runtime_v2", "_runtime_cineremix", ".venv", ".git", "credentials"}
 # One-off hotfix installers and notes accumulated by RC2.7.x and older releases. After a
 # successful update they are MOVED (never deleted) into this update's backup folder,
