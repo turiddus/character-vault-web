@@ -1,6 +1,6 @@
 // Character Vault web app: guscio dell'app disponibile anche senza rete. I dati (indice e miniature)
 // sono gestiti dalla pagina nelle cache "cv-data" e "cv-packs"; Google non viene mai intercettato.
-const SHELL = "gv-shell-v4";
+const SHELL = "gv-shell-v5";
 const FILES = ["./", "index.html", "ui72.css", "ui72.js", "links73.js", "genesis82.js", "genesis_dna.js", "lab904.js", "genesis_phone83.js", "studio90.js", "goth_atlas.js", "gothatlas_phone.js", "goth_atlas.json", "lab_masters.json", "lab_presets.json", "genesis_dna_v1.json", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", e => {

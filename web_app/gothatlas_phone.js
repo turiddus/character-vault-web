@@ -115,13 +115,19 @@ async function go_(){
   run = {stop: false, done: 0}; let refused = 0, fallback = 0;
   $("#gv-go").disabled = true; $("#gv-stop").style.display = ""; $("#gv-stop").disabled = false;
   const state = t => { const e = $("#gv-state"); if (e) e.textContent = t; };
+  let retry = null, softened = 0;
   for (let i = 0; i < n; i++) {
     if (run.stop) break;
     let prompt, caption, fields;
+    if (retry) {   // a refused request is not charged: one more try with safer wording
+      fields = retry; retry = null; prompt = G.compose(fields);
+      caption = `${G.SUBJECT_LABELS[fields.subject] || ""} · ${fields.subgenre} · ${fields.city || ""} · safer retry`;
+    } else {
     const stocked = srcs[i] === "codex" ? stockScene() : null;
     if (srcs[i] === "codex" && !stocked) fallback++;
     if (stocked) { prompt = stocked.prompt; fields = stocked.f || {}; caption = `${G.SUBJECT_LABELS[fields.subject] || ""} · ${fields.subgenre || "Codex scene"} · ${fields.city || ""} · Codex`; }
     else { fields = G.pick(filters, recent(), goth().mix); prompt = G.compose(fields); caption = `${G.SUBJECT_LABELS[fields.subject] || ""} · ${fields.subgenre} · ${fields.city}, ${fields.country} · age ${fields.age} · database`; }
+    }
     for (const k of ["subgenre", "category", "city", "setting"]) if (fields[k]) session[k].push(fields[k]);
     state(`Image ${i + 1}/${n}… (20 s – 3 min, keep the app open)`);
     const result = new Promise(r => { wait = r; });
@@ -129,7 +135,13 @@ async function go_(){
     const err = window.CVNative.genesisPhoneGenerateDna(model, quality, size, prompt, true, dna);
     if (err) { wait = null; state(`Stopped at image ${i + 1}: ${err} (nothing was sent or charged)`); run.stop = true; toast(err, 7000); break; }
     const ev = await result;
-    if (ev.type === "failed" && /OpenAI error 4\d\d/.test(ev.message || "")) { refused++; toast(`Image ${i + 1}: refused by OpenAI, skipped.`, 4000); continue; }
+    if (ev.type === "failed" && /OpenAI error 4\d\d/.test(ev.message || "")) {
+      if (!fields.soft && !run.stop) {
+        retry = G.soften(fields.setting ? fields : G.pick(filters, recent(), goth().mix));   // stocked Codex scenes: a fresh database one
+        softened++; i--; toast(`Image ${i + 2}: refused by OpenAI (not charged) — trying once more with safer wording.`, 4000); continue;
+      }
+      refused++; toast(`Image ${i + 1}: refused again by OpenAI, skipped.`, 4000); continue;
+    }
     if (ev.type !== "generated") { state(`Stopped at image ${i + 1}: ${ev.message || ev.type}`); run.stop = true; break; }
     run.done++;
     results.push({name: ev.name, caption});
@@ -139,7 +151,7 @@ async function go_(){
   }
   const done = run.done, stopped = run.stop; run = null; dna = "";
   const msg = `${done} of ${n} created and sent: the PC archives them (Drive + NAS) and Codex catalogs them.`
-    + (fallback ? ` No Codex scene in stock for ${fallback}: database used.` : "") + (refused ? ` Refused by OpenAI: ${refused}.` : "");
+    + (fallback ? ` No Codex scene in stock for ${fallback}: database used.` : "") + (softened ? ` ${softened} retried with safer wording.` : "") + (refused ? ` Refused by OpenAI: ${refused}.` : "");
   if (S.view === "atlas") { const keep = $("#gv-state")?.textContent || ""; render(); state(stopped && keep.startsWith("Stopped") ? keep : msg); }
 }
 window.renderAtlas = render;

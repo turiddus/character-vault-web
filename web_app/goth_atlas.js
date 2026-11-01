@@ -43,6 +43,9 @@ function similar(a, b, threshold = 0.75){
   const jac = inter / (A.size + B.size - inter), small = Math.min(A.size, B.size);
   return jac >= threshold || (small >= 2 && inter === small && jac >= 0.6);
 }
+const RISKY = /(fishnet|stocking|thigh[- ]high|garter|corset|bodice|slit|sheer|mesh|lace overlay|bare|shirtless|bralette|cleavage|low[- ]cut|bodycon|mini\b|tube dress|halter|backless|strapless|wiggle|hips|leaning|crouch|bed\b|bedroom|pillow|sheets|bath|shower|towel|lingerie|sleeveless|tank)/i;
+const SAFE_LINE = "Everyday street style: clothing fully covers the body apart from the V neckline (worn over an opaque lining); relaxed, non-suggestive candid moment.";
+function safe(items, riskyOk){ if (riskyOk) return ch(items); const ok = items.filter(x => !RISKY.test(x)); return ch(ok.length ? ok : items); }
 function load(){
   if (B) return Promise.resolve(atlas());
   if (!loading) loading = fetch("goth_atlas.json").then(r => r.json()).then(j => { B = j; return atlas(); }).catch(e => { loading = null; throw e; });
@@ -94,8 +97,9 @@ function age(f, near){
 }
 function family(sub){ const fams = {}; atlas().men.families.forEach(f => { fams[f.n] = f; }); return fams[sub.fam || "casual"] || fams.casual; }
 function person(kind, sub, f, near){
-  const a = atlas(), P = a.pools;
-  const c = {age: age(f, near), skin: ch(P.skin), face: ch(P.face), haircolor: ch(P.haircolor), marks: ch(P.marks),
+  const a = atlas(), P = a.pools, ag = age(f, near), young = ag <= 24;
+  const ch = items => safe(items, !young);
+  const c = {age: ag, skin: safe(P.skin, true), face: ch(P.face), haircolor: ch(P.haircolor), marks: ch(P.marks),
     glasses: ch(P.glasses), emotion: ch(P.emotion), expression: ch(P.expression), palette: ch(sub.p), subgenre: sub.n};
   if (kind === "man") { const fam = family(sub), M = a.men;
     return Object.assign(c, {body: ch(M.body), hair: ch(M.hair), facial_hair: ch(M.facial_hair), makeup: ch(M.makeup),
@@ -119,8 +123,10 @@ function pick(filters, recent, mix){
   const sf = {subject, category: cat.n, continent: city[0], country: city[1], city: city[2], setting: scene.s, district: ch(P.district),
     detail: scene.d, crowd: ch(P.crowd), time: ch(P.time), season: ch(P.season), weather: ch(P.weather), phone: ch(P.phone),
     angle: ch(P.angle), light: ch(scene.i ? P.light_in : P.light_out), imp1: imps[0], imp2: imps[1], source: "database"};
-  if (subject === "woman" || subject === "man")
-    return Object.assign(sf, {action: ch(scene.a), pose: ch(P.pose), prop: Math.random() < 0.5 ? ch(P.prop) : ""}, person(subject, sub, f));
+  if (subject === "woman" || subject === "man") {
+    const pr = person(subject, sub, f);
+    return Object.assign(sf, {action: ch(scene.a), pose: safe(P.pose, pr.age > 24), prop: Math.random() < 0.5 ? ch(P.prop) : ""}, pr);
+  }
   const C = a.couples, aKind = subject === "couple_mf" ? "man" : "woman";
   const subB = leastUsed(subs, s => s.n, (r.subgenre || []).concat([sub.n, sub.n, sub.n]), 6);
   const pa = person(aKind, sub, f), pb = person("woman", subB, f, pa.age);
@@ -153,7 +159,38 @@ function personLine(p, kind, label){
   if (kind === "man") return `${label}: adult man, age ${a}, ${q.subgenre} style; ${q.skin}, ${q.body}, ${q.face}; ${q.haircolor} hair, ${q.hair}; ${q.facial_hair}; ${q.makeup}${extra}; wearing ${q.garment}${layer}, ${q.footwear}, ${q.accessory}; colours ${q.palette}; ${q.expression}.`;
   return `${label}: adult woman, age ${a}, ${q.subgenre} style; ${q.skin}, ${q.body}, ${q.face}; ${q.haircolor} hair, ${q.hair}; ${q.makeup}${extra}; wearing a deep V-neck ${stripV(q.garment)}${q.gdetail ? " with " + q.gdetail : ""}${layer}, ${q.legwear}, ${q.footwear}, ${q.accessory}; colours ${q.palette}; ${q.expression}.`;
 }
+function soften(fields){
+  const a = atlas(), P = a.pools, f = copy(fields), subs = {};
+  a.subgenres.forEach(s => { subs[s.n] = s; });
+  const fix = (p, kind) => {
+    const sub = subs[p.subgenre] || ch(a.subgenres);
+    if (kind === "man") { const fam = family(sub);
+      [["garment", fam.g], ["layer", fam.l], ["accessory", fam.a]].forEach(([k, items]) => { if (RISKY.test(String(p[k] || ""))) p[k] = safe(items, false); });
+    } else {
+      [["garment", sub.g], ["gdetail", P.gdetail], ["layer", P.layer], ["legwear", P.legwear], ["accessory", sub.a]].forEach(([k, items]) => { if (RISKY.test(String(p[k] || ""))) p[k] = safe(items, false); });
+      if (!opt(String(p.layer || ""))) p.layer = safe(P.layer.filter(x => opt(x)), false);
+    }
+  };
+  const subject = f.subject || "woman";
+  if (subject.startsWith("couple")) { f.person_a = f.person_a || {}; f.person_b = f.person_b || {}; fix(f.person_a, subject === "couple_mf" ? "man" : "woman"); fix(f.person_b, "woman"); }
+  else { fix(f, subject); if (RISKY.test(String(f.pose || ""))) f.pose = safe(P.pose, false); }
+  if (["setting", "detail", "action", "couple_action"].some(k => RISKY.test(String(f[k] || "")))) {
+    const ok = []; a.categories.forEach(c => c.scenes.forEach(sc => { if (!RISKY.test(sc.s + " " + sc.d + " " + sc.a.join(" "))) ok.push([c, sc]); }));
+    const [c, sc] = ch(ok); f.category = c.n; f.setting = sc.s; f.detail = sc.d;
+    if (subject.startsWith("couple")) f.couple_action = safe(sc.a, false) + " together"; else f.action = safe(sc.a, false);
+  }
+  f.soft = true;
+  return f;
+}
+function young(fields){
+  return [fields.age, (fields.person_a || {}).age, (fields.person_b || {}).age].some(x => x !== undefined && x !== null && x !== "" && ageOf(x) <= 24);
+}
 function compose(fields){
+  let t = compose_(fields);
+  if (fields.soft || young(fields)) t = t.replace("\nCONSTRAINTS: ", "\n" + SAFE_LINE + "\nCONSTRAINTS: ");
+  return t;
+}
+function compose_(fields){
   const a = atlas(), subject = fields.subject || "woman";
   if (subject === "couple_mf" || subject === "couple_ff") {
     const f = {}; COUPLE_KEYS.forEach(k => { f[k] = pronouns(clean(fields[k]), "couple"); });
@@ -172,7 +209,7 @@ function compose(fields){
   return fill(a.master, repl);
 }
 window.__gothAtlas = {
-  load, ready: () => !!B, pick, compose, merge, concept, similar, SUBJECTS, SUBJECT_LABELS, DEFAULT_MIX,
+  load, ready: () => !!B, pick, compose, merge, concept, similar, soften, SUBJECTS, SUBJECT_LABELS, DEFAULT_MIX,
   subgenres: () => (B ? atlas().subgenres.map(s => s.n) : []),
   categories: () => (B ? atlas().categories.map(c => c.n) : []),
   continents: () => (B ? [...new Set(atlas().cities.map(c => c[0]))] : []),
